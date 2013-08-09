@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FusionConfig>
+	<Profile name="My Profile Name">
+	
+	<Essid>My ESSID</Essid>
+	<!--
+		IPv4 tag
+		attributes
+		mode: static | dhcp
+		ip: n.n.n.n
+		subnet: s.s.s.s
+		gateway: g.g.g.g
+			
+	-->
+    <IPv4 mode="static | dhcp" ip="10.0.0.100" subnet="255.255.255.0" gateway="10.0.0.1" dns="10.10.1.5">
+	
+	<IPv4 mode="static | dhcp">
+		<ip>10.216.140.74</ip>
+		<subnet>255.255.248.0</subnet>
+		<gateway>10.216.140.1</gateway>
+		<dns>192.176.113.148</dns>
+		<dns>193.176.114.149</dns>
+		<wins>192.182.220.38</wins>
+		<wins>194.183.221.39</wins>
+	</IPv4>
+	<EncryptionMethod>WEP128</EncryptionMethod>
+	
+	<!-- 
+		Wep128 tag
+		Attributes:
+			active = active key index.
+			keyindex = n (1 - 4)
+		Value:
+			Hex value string.
+		
+	-->
+	<Wep128 active="1" keyindex="1">298329832AABDECF3932092CFD</Wep128>
+	<Wep128 keyindex="2">298329832AABDECF3932092CFD</Wep128>
+	<Wep128 keyindex="3">298329832AABDECF3932092CFD</Wep128>
+	<Wep128 keyindex="4">298329832AABDECF3932092CFD</Wep128>
+	
+	<WEP128>
+		<KeyToUse>1</KeyToUse>
+		<Key1Hex>298329832AABDECF3932092CFD</Key1Hex>
+	</WEP128>
+	<!-- Passphrase tag
+	     
+		 type attribute can be following:
+		 0 = Legacy (WEP-40 bit, 104 bit).
+		 1 = WPA pre-shared key. 
+	     2 = WPA2 pre-shared key.
+		 3 = WPA Enterprise
+		 4 = WPA2 Enterprise
+		 5 = WPA CCKM (Fusion 2.57)
+		 6 = WAPI 
+		 
+		 method attribute can be following:
+		 tkip
+		 aes
+	 -->	 
+	<Passphrase type="1" method="tkip | aes">something very secret</Passphrase>
+	
+</Profile>
+</FusionConfig>
