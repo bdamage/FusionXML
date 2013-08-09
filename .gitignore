@@ -11,3 +11,10 @@
 *.lai
 *.la
 *.a
+
+
+#Windows and visual studio specific
+*.exe
+*.dll
+*.ncb
+*.user
