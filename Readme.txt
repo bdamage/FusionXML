@@ -1,0 +1,1 @@
+To compile ensure that the EMDK 1.4 patch is applied.
