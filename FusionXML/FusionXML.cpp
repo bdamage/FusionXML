@@ -118,7 +118,9 @@ void AddLog(int color, const TCHAR *lpszText, ...)
 	SYSTEMTIME systime;
 	GetSystemTime(&systime);  //get current time and date
 
-	TCHAR szBuffer[1024];	
+	TCHAR szBuffer[2048];
+	int size = sizeof(szBuffer);
+	ZeroMemory(szBuffer,size);
 	int ret = _vsnwprintf(szBuffer,sizeof(szBuffer),lpszText, argList);
 #ifdef _DEBUG				
 	OutputDebugString(szBuffer);
@@ -1008,10 +1010,10 @@ FAPI_PROFILE_7 ParseProfile7(CFusionXMLProfile &fxml)
 	fapiProfile.dwAesAllowMixedMode = (FAPI_WLAN_AES_ALLOW_MIXED_MODE)fxml.GetAllowAESMixedMode();
 	AddLog(0,_T("Allow mixed mode security = %d"),fapiProfile.dwAesAllowMixedMode);
 
-	//Removed version 20 - on MC75A with Fusion 3.00.2.0.025R
+	
 	//Default to 104 bit WEP if LEAP being used (modified Version 1.17)
-	//if((fapiProfile.NetworkType.Infrastructure.dwAuthentication == FAPI_LEAP) && (fapiProfile.dwEncryption == FAPI_ENCRYPTION_NONE)) 
-	//	fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT;
+	if((fapiProfile.NetworkType.Infrastructure.dwAuthentication == FAPI_LEAP) && (fapiProfile.dwEncryption == FAPI_ENCRYPTION_NONE)) 
+		fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT;
 
 
 	fapiProfile.NetworkType.Infrastructure.dwSecurityMode = GetSecurityMode(fapiProfile.NetworkType.Infrastructure.dwAuthentication,fapiProfile.dwEncryption);
@@ -1046,8 +1048,7 @@ FAPI_PROFILE_7 ParseProfile7(CFusionXMLProfile &fxml)
 
 	TiXmlElement *pUserCred = NULL; 
 	pUserCred = fxml.GetElementSafe(pElmProf,"UserCredentials");		
-	if(pUserCred)
-	{
+	if(pUserCred) {
 		fxml.GetText(pUserCred,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCredSettings.pszIdentity,"UserName",FAPI_MAX_USERNAME_LENGTH);
 		fxml.GetText(pUserCred,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCredSettings.pszUserPwd,"Password",FAPI_MAX_PASSWORD_LENGTH);
 		fxml.GetText(pUserCred,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCredSettings.pszDomain,"Domain",FAPI_MAX_DOMAINNAME_LENGTH);
@@ -1055,30 +1056,26 @@ FAPI_PROFILE_7 ParseProfile7(CFusionXMLProfile &fxml)
 
  	TiXmlElement *pIEEE8021X = NULL; 
 	pIEEE8021X = fxml.GetElementSafe(pElmProf,"IEEE8021X");		
-	if(pIEEE8021X)
-	{
+	if(pIEEE8021X) {
 		fxml.GetText(pIEEE8021X,fapiProfile.NetworkType.Infrastructure.CredentialSettings.IEEE8021X_CredSettings.psz802_1xDomain,"Domain",FAPI_MAX_DOMAINNAME_LENGTH);
 		fxml.GetText(pIEEE8021X,fapiProfile.NetworkType.Infrastructure.CredentialSettings.IEEE8021X_CredSettings.psz802_1xUserIdentity ,"UserIdentity",FAPI_MAX_USERNAME_LENGTH);
 	}
 
 	TiXmlElement *pServerCert = NULL; 
 	pServerCert = fxml.GetElementSafe(pElmProf,"ServerCert");		
-	if(pServerCert)
-	{
+	if(pServerCert) {
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.ServerCertInstall.FileCertInstall.pszServerCertFName ,"Filename",FAPI_MAX_CERT_FNAME_LENGTH);
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.ServerCertInstall.FileCertInstall.pszServerCertPath ,"Path",FAPI_MAX_SERVER_CERT_PATH_LEN);
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.ServerCertInstall.LocalCertInstall.pszServerCertFName ,"LocalCertFilename",FAPI_MAX_CERT_FNAME_LENGTH);
 	}
 
    	pServerCert = fxml.GetElementSafe(pElmProf,"LocalUserCert");		
-	if(pServerCert)
-	{	
+	if(pServerCert){	
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.LocalCertInstall.pszUserCertFName,"UserCertFilename",FAPI_MAX_CERT_FNAME_LENGTH);
 	}
 
 	pServerCert = fxml.GetElementSafe(pElmProf,"RemoteUserCert");		
-	if(pServerCert)
-	{
+	if(pServerCert) {
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.RemoteCertInstall.pszServerName,"ServerName",FAPI_MAX_REMOTE_SERVER_NAME_LEN);
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.RemoteCertInstall.pszRemoteUserName,"UserName",FAPI_MAX_REMOTE_USER_NAME_LEN);
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.RemoteCertInstall.pszRemotePassword,"Password",FAPI_MAX_REMOTE_PASSWORD_LEN);
@@ -1200,8 +1197,7 @@ FAPI_PROFILE_8 ParseProfile8(CFusionXMLProfile &fxml)
 
 	TiXmlElement *pUserCred = NULL; 
 	pUserCred = fxml.GetElementSafe(pElmProf,"UserCredentials");		
-	if(pUserCred)
-	{
+	if(pUserCred) {
 		fxml.GetText(pUserCred,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCredSettings.pszIdentity,"UserName",FAPI_MAX_USERNAME_LENGTH);
 		fxml.GetText(pUserCred,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCredSettings.pszUserPwd,"Password",FAPI_MAX_PASSWORD_LENGTH);
 		fxml.GetText(pUserCred,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCredSettings.pszDomain,"Domain",FAPI_MAX_DOMAINNAME_LENGTH);
@@ -1209,16 +1205,14 @@ FAPI_PROFILE_8 ParseProfile8(CFusionXMLProfile &fxml)
 
 	TiXmlElement *pIEEE8021X = NULL; 
 	pIEEE8021X = fxml.GetElementSafe(pElmProf,"IEEE8021X");		
-	if(pIEEE8021X)
-	{
+	if(pIEEE8021X) {
 		fxml.GetText(pIEEE8021X,fapiProfile.NetworkType.Infrastructure.CredentialSettings.IEEE8021X_CredSettings.psz802_1xDomain,"Domain",FAPI_MAX_DOMAINNAME_LENGTH);
 		fxml.GetText(pIEEE8021X,fapiProfile.NetworkType.Infrastructure.CredentialSettings.IEEE8021X_CredSettings.psz802_1xUserIdentity ,"UserIdentity",FAPI_MAX_USERNAME_LENGTH);
 	}
 
 	TiXmlElement *pServerCert = NULL; 
 	pServerCert = fxml.GetElementSafe(pElmProf,"ServerCert");		
-	if(pServerCert)
-	{
+	if(pServerCert) {
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.ServerCertInstall.FileCertInstall.pszServerCertFName ,"Filename",FAPI_MAX_CERT_FNAME_LENGTH);
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.ServerCertInstall.FileCertInstall.pszServerCertPath ,"Path",FAPI_MAX_SERVER_CERT_PATH_LEN);
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.ServerCertInstall.LocalCertInstall.pszServerCertFName ,"LocalCertFilename",FAPI_MAX_CERT_FNAME_LENGTH);
@@ -1461,8 +1455,7 @@ int processData(TiXmlDocument *pDoc)
 	TiXmlNode	*pNode=NULL;
 
 	pRootElm = hDoc.FirstChildElement().Element();
-	if(!pRootElm)
-	{
+	if(!pRootElm){
 		AddLog(1,_T("Error finding root element &lt;FusionConfig&gt; in xml file!\n"));
 		return ERR_TAG_FUSIONCONFIG;
 	}
@@ -1471,17 +1464,18 @@ int processData(TiXmlDocument *pDoc)
 
 	//Do initial config
 	DWORD dwDummyValue=0;
-	if(fxml.GetInteger(pRootElm,&dwDummyValue,"SetLog")==0)  
-		if(dwDummyValue==0)
-		{
+	if(fxml.GetInteger(pRootElm,&dwDummyValue,"SetLog")==0) {
+		if(dwDummyValue==0) {
 			ClearLog();
 			bLog = FALSE;
 		}
+	}
 
 	dwDummyValue = 0;
-	if(fxml.GetInteger(pRootElm,&dwDummyValue,"Connect")==0)  
+	if(fxml.GetInteger(pRootElm,&dwDummyValue,"Connect")==0)  {
 		if(dwDummyValue==1)
 			bConnect = TRUE;
+	}
 	
 	dwDummyValue = 0;
 	if(fxml.GetInteger(pRootElm,&dwDummyValue,"Export")==0)  
@@ -2218,7 +2212,11 @@ FUSIONXML_API int AddProfile(SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, cons
 	if(tStrOutput!=NULL)
 		free(tStrOutput);
 
-	AddLog(2,(TCHAR*)CmdLine);
+	int l = _tcslen(CmdLine);
+	if(l>1600)
+		AddLog(2,(TCHAR*)CmdLine);
+	else
+		AddLog(2,_T("Skipping dump of command line to log."));
 	
 	GetFusionVersion();
 

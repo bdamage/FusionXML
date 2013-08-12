@@ -18,3 +18,7 @@
 *.dll
 *.ncb
 *.user
+
+#Folders
+*/Windows Mobile 5.0 Pocket PC SDK (ARMV4I)/*
+*/Motorola MC3100c60 Windows CE6.0 PSDK (ARMV4I)/*

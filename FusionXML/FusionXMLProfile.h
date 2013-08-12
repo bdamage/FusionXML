@@ -384,8 +384,7 @@ public:
 				if(dwValue==1)
 					*dwCacheOpts |= FAPI_CACHE_OPTION_TIME;
 
-			if(GetInteger(pCredOpt,&dwValue,"TimeOption")==0)
-			{
+			if(GetInteger(pCredOpt,&dwValue,"TimeOption")==0) {
 				if(dwValue==0)
 					*dwTimeCacheOpts = FAPI_TIME_CACHE_INTERVAL;
 				else if (dwValue==1)
@@ -406,8 +405,7 @@ public:
 		TiXmlNode *pNode;
 		pNode=NULL;
 		pNode = pElement->FirstChild(szElementName);
-		if(pNode!=NULL)
-		{
+		if(pNode!=NULL) {
 			 return pNode->ToElement();
 		}
 		//AddLog(2,_T("Could not find tag %S"),szElementName);
@@ -421,18 +419,13 @@ public:
 	****************************/
 	int GetText(TiXmlElement *pElm,TCHAR *pszOut,char * szElementName, DWORD dwBufferLen)
 	{
-
 		TiXmlNode* pNode=NULL;
 		pNode = pElm->FirstChild(szElementName);
-		if(pNode!=NULL)
-		{
-			
+		if(pNode!=NULL) {
 			TiXmlElement *pElement= pNode->ToElement();
-			if(pElement)
-			{
+			if(pElement) {
 				const char *szTxt = pElement->GetText();
-				if(szTxt!=NULL)
-				{
+				if(szTxt!=NULL) {
 					if(strlen(szTxt)+1 <= dwBufferLen)
 						dwBufferLen = strlen(szTxt)+1;
 					else
@@ -458,15 +451,11 @@ public:
 	{
 		TiXmlNode* pNode=NULL;
 		pNode = pElm->FirstChild(szElementName);
-		if(pNode!=NULL)
-		{
-			
+		if(pNode!=NULL){			
 			TiXmlElement *pElement= pNode->ToElement();
-			if(pElement)
-			{
+			if(pElement) {
 				const char *szTxt = pElement->GetText();
-				if(szTxt!=NULL)
-				{
+				if(szTxt!=NULL) {
 					*dwOut = (DWORD)atol(szTxt);
 					AddLog(0,_T("&lt;%S&gt; = %d"),szElementName,*dwOut);
 				}

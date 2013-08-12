@@ -35,11 +35,14 @@ int _tmain(int argc, _TCHAR* argv[])
 		<WINS1>10.32.64.99</WINS1></IPv4>\
 		<SecurityType>1</SecurityType>\
 		<EncryptionMethod>TKIP</EncryptionMethod><Passphrase>abcdef=-3Vsdqf!rr+efgh</Passphrase></Profile></FusionConfig>\"");
+//	TCHAR xmlLEAP[] = _T("\"<FusionConfig> <SetLog>0</SetLog>  <Export>1</Export>  <ExportFileName>WCS_PROFILES.REG</ExportFileName>  <Profile name=\"Enter_Your_Profile_Name_Here\">  <ESSID>Enter_Your_SSID_Here</ESSID>  <IPv4Mode>DHCP</IPv4Mode>  <SecurityType>0</SecurityType>  <AuthMethod>LEAP</AuthMethod>  <CredentialFlags>    <RequireUserCertificate>0</RequireUserCertificate>    <SpecifyUserCertificateLocal>0</SpecifyUserCertificateLocal>    <SpecifyServerCertificateLocal>0</SpecifyServerCertificateLocal>    <ValidateServerCertificate>0</ValidateServerCertificate>    <EnableSecureTunnelCredentials>0</EnableSecureTunnelCredentials>    <SpecifyProfileTypeAsUserProfile>0</SpecifyProfileTypeAsUserProfile>  </CredentialFlags>  <CredentialCache>    <OnConnect>0</OnConnect>    <OnResume>0</OnResume>    <OnTime>0</OnTime>    <TimeOption>0</TimeOption>  </CredentialCache>  <UserCredentials>    <UserName>AUTHUSERNAME</UserName>    <Password>AUTHPASSWORD</Password>    <Domain></Domain>  </UserCredentials>  <OPMode>1</OPMode>  <EncryptMethod>WEP128</EncryptMethod>  <PowerIndex>1</PowerIndex>  <TxPower>0</TxPower>  </Profile></FusionConfig>\"");	
 
 	
+	TCHAR xmlLEAP[] = _T("\"<FusionConfig><SetLog>0</SetLog><Export>1</Export><ExportFileName>WCS_PROFILES.REG</ExportFileName><Profile name=\"Enter_Your_Profile_Name_Here\"><ESSID>Enter_Your_SSID_Here</ESSID>\
+					   <CredentialFlags><RequireUserCertificate>0</RequireUserCertificate>    <SpecifyUserCertificateLocal>0</SpecifyUserCertificateLocal>    <SpecifyServerCertificateLocal>0</SpecifyServerCertificateLocal>\
+					   <ValidateServerCertificate>0</ValidateServerCertificate>    <EnableSecureTunnelCredentials>0</EnableSecureTunnelCredentials>    <SpecifyProfileTypeAsUserProfile>0</SpecifyProfileTypeAsUserProfile>  </CredentialFlags>  <CredentialCache>    <OnConnect>0</OnConnect><OnResume>0</OnResume><OnTime>0</OnTime>    <TimeOption>0</TimeOption>  </CredentialCache>  <UserCredentials>    <UserName>AUTHUSERNAME</UserName>    <Password>AUTHPASSWORD</Password>    <Domain></Domain>  </UserCredentials><OPMode>1</OPMode><EncryptMethod>WEP128</EncryptMethod><PowerIndex>1</PowerIndex><TxPower>0</TxPower></Profile></FusionConfig>\"");
 	HINSTANCE hInstFXML = (HINSTANCE)LoadLibrary(L"FusionXML.dll");
-	if(hInstFXML!=NULL)
-	{
+	if(hInstFXML!=NULL) {
 		OutputDebugString(_T("Found FusionXML.dll!\n"));
 		lpfnFXML_AddProfile = (LPFNFSYMSCRIPTPLUGIN)GetProcAddress(hInstFXML,ADDPROFILE);
 		lpfnFXML_DelAllProfiles = (LPFNFSYMSCRIPTPLUGIN)GetProcAddress(hInstFXML,_T("DeleteAllProfiles"));
@@ -48,11 +51,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		lpfnFXML_PowerStatus = (LPFNFSYMSCRIPTPLUGIN)GetProcAddress(hInstFXML,_T("PowerStatus"));
 		lpfnFXML_ExportAlLProfiles = (LPFNFSYMSCRIPTPLUGIN)GetProcAddress(hInstFXML,_T("PowerStatus"));
 
-		if(lpfnFXML_AddProfile)
-		{
+		if(lpfnFXML_AddProfile){
 		//	lpfnFXML_DelAllProfiles(NULL,0,NULL);
-			lpfnFXML_AddProfile(NULL,0,_T("\"\\example_peap_mschapv2_v252.xml\""));
-			lpfnFXML_AddProfile(NULL,0,_T("\"\\FusionCfgMaster.xml\""));
+			lpfnFXML_AddProfile(NULL,0,_T("\"\\WiFiConfMaster.xml\""));
+		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\FusionCfgMaster.xml\""));
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\example_tkip_dhcp.xml\""));
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\example_aes_dhcp.xml\""));
 			
@@ -68,7 +70,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\open_dhcp.xml\""));
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\wep_static_ip.xml\""));
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\tkip_dhcp.xml\""));				
-		//	lpfnFXML_AddProfile(NULL,0,szStreamXML);
+		//	lpfnFXML_AddProfile(NULL,0,xmlLEAP);
 		}
 		
 		//if(lpfnFXML_PowerOn)
