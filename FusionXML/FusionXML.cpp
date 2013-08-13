@@ -118,10 +118,12 @@ void AddLog(int color, const TCHAR *lpszText, ...)
 	SYSTEMTIME systime;
 	GetSystemTime(&systime);  //get current time and date
 
-	TCHAR szBuffer[2048];
-	int size = sizeof(szBuffer);
+//	TCHAR szBuffer[2048];
+	TCHAR *szBuffer = new TCHAR[2048];
+
+	int size = sizeof(TCHAR[2048]);
 	ZeroMemory(szBuffer,size);
-	int ret = _vsnwprintf(szBuffer,sizeof(szBuffer),lpszText, argList);
+	int ret = _vsnwprintf(szBuffer,size,lpszText, argList);
 #ifdef _DEBUG				
 	OutputDebugString(szBuffer);
 	OutputDebugString(_T("\n"));
@@ -138,7 +140,9 @@ void AddLog(int color, const TCHAR *lpszText, ...)
 		fwprintf(pFile, _T("</b></font><br>\n"));
 		//Close the file
 		fclose(pFile);			
-	}			
+	}
+	delete szBuffer;
+
 
 }
 
@@ -2213,7 +2217,7 @@ FUSIONXML_API int AddProfile(SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, cons
 		free(tStrOutput);
 
 	int l = _tcslen(CmdLine);
-	if(l>1600)
+	if(l<1600)
 		AddLog(2,(TCHAR*)CmdLine);
 	else
 		AddLog(2,_T("Skipping dump of command line to log."));
