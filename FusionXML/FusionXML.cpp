@@ -36,6 +36,9 @@ TCHAR tcszExportFilename[260];
 TCHAR g_pszFusionVersionStr[FAPI_MAX_MODULE_VERSION_SIZE];
 
 
+CFusionMgr g_fusion;  //Common Fusion API wrapper
+
+
 BOOL APIENTRY DllMain( HANDLE hModule, 
                        DWORD  ul_reason_for_call, 
                        LPVOID lpReserved
