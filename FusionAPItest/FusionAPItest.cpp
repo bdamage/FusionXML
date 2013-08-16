@@ -143,7 +143,7 @@ void AddNewProfile()
 	fapiProfile.NetworkType.Infrastructure.CredentialSettings.CredentialPromptOption.dwCacheOpts = (FAPI_CACHE_OPTION_CONNECT | FAPI_CACHE_OPTION_RESUME); //see TABLE 3 what to set
 
 	//_tcscpy(fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.LocalCertInstall.pszUserCertFName,_T("mycert"));
-	g_fusion.AddFusionProfile((PVOID)&fapiProfile);
+	g_fusion.AddProfile((PVOID)&fapiProfile);
 }
 
 
@@ -193,7 +193,7 @@ void AddNewLEAPProfile()
 	_tcscpy(fapiProfile.NetworkType.Infrastructure.CredentialSettings.ServerCertInstall.LocalCertInstall.pszServerCertFName,_T("Class 2 Public Primary Certification Authority"));
 	fapiProfile.NetworkType.Infrastructure.CredentialSettings.CredentialPromptOption.dwCacheOpts = (FAPI_CACHE_OPTION_CONNECT | FAPI_CACHE_OPTION_RESUME); //see TABLE 3 what to set
 
-	g_fusion.AddFusionProfile((PVOID)&fapiProfile);
+	g_fusion.AddProfile((PVOID)&fapiProfile);
 }
 
 void AddNewPEAPProfile()
@@ -246,12 +246,13 @@ void AddNewPEAPProfile()
 
 	_tcscpy(fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.LocalCertInstall.pszUserCertFName,_T("mycert"));
 	
-	g_fusion.AddFusionProfile((PVOID)&fapiProfile);
+	g_fusion.AddProfile((PVOID)&fapiProfile);
 }
 
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	g_fusion.InitializeLib();
 	g_fusion.EnumerateAndDeleteProfiles();
 	AddNewLEAPProfile();
 	AddNewPEAPProfile();

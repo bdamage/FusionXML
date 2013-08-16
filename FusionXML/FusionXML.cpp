@@ -1504,46 +1504,47 @@ int processData(TiXmlDocument *pDoc)
 	memset(tcszExportFilename,0,sizeof(tcszExportFilename));
 	fxml.GetText(pRootElm,tcszExportFilename,"ExportFileName",260);
 	
+	PVOID profile;
 
 	DWORD dwVersion = GetStructVersion();
 	switch(dwVersion)
 	{
 		default:
 		case FAPI_PROFILE_2_VERSION:
-			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile2(fxml)))
+			if(g_fusion.AddProfile((PVOID)&ParseProfile2(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_3_VERSION:
-			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile3(fxml)))
+			if(g_fusion.AddProfile((PVOID)&ParseProfile3(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_4_VERSION:
-			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile4(fxml)))
+			if(g_fusion.AddProfile((PVOID)&ParseProfile4(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_5_VERSION:
-			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile5(fxml)))
+			if(g_fusion.AddProfile((PVOID)&ParseProfile5(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_6_VERSION:			
-			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile6(fxml)))
+			if(g_fusion.AddProfile((PVOID)&ParseProfile6(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_7_VERSION:
 			{
 				void* p = ParseProfile7(fxml);
-				BOOL bRet = g_fusion.AddFusionProfile((PVOID)p);
+				BOOL bRet = g_fusion.AddProfile((PVOID)p);
 				free(p);
 				if(bRet)
 					return SUCCESSFULL;
 			}
 			break;
 		case FAPI_PROFILE_8_VERSION:
-			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile8(fxml)))
+			if(g_fusion.AddProfile((PVOID)&ParseProfile8(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_9_VERSION:
-			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile9(fxml)))
+			if(g_fusion.AddProfile((PVOID)&ParseProfile9(fxml)))
 				return SUCCESSFULL;
 			break;
 	}
@@ -1777,7 +1778,6 @@ FUSIONXML_API int AddProfile(SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, cons
 	TCHAR *pStartT = _tcschr((TCHAR*)CmdLine,'"');
 	if(pStartT==NULL) {
 		AddLog(1,_T("Error parsing command!"));
-		g_fusion.DeInitializeLib();
 		return ERR_PARSING_CMD_ERROR;
 	}
 
@@ -1798,7 +1798,6 @@ FUSIONXML_API int AddProfile(SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, cons
 		if(pEndT==NULL) {
 			free(pString);
 			AddLog(1,_T("Error parsing command (no end \")!"));
-			g_fusion.DeInitializeLib();
 			return ERR_PARSING_CMD_ERROR;
 		}		
 		pEndT[0]=0;

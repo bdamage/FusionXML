@@ -201,7 +201,7 @@ public:
 
 	DWORD GetAllowAESMixedMode()
 	{
-		DWORD dwSecValue = FAPI_WLAN_AES_ALLOW_MIXED_MODE_ON;                 
+		DWORD dwSecValue = FAPI_WLAN_AES_ALLOW_MIXED_MODE_OFF;                 
 		if(GetInteger(pElmProf,&dwSecValue,"AllowAESMixedMode")==0) {
 			//Success?
 		}

@@ -29,7 +29,8 @@ private:
 
 
 	//defines globals used withing high level APIs. 
-	DWORD     				m_hInstFusionDLL;
+	HINSTANCE     			m_hInstFusionDLL;
+	DWORD     				m_hFusionAPI;
 	LPFN_OPEN_FUSION_API	lpfn_OpenFusionAPI;
 	LPFN_CLOSE_FUSION_API	lpfn_CloseFusionAPI;
 	LPFN_COMMAND_FUSION_API	lpfn_CommandFusionAPI;
@@ -41,6 +42,7 @@ public:
 	CFusionMgr(void)
 	{
 		m_hInstFusionDLL      = 0;
+		m_hFusionAPI = 0;
 		lpfn_OpenFusionAPI    = NULL;
 		lpfn_CloseFusionAPI   = NULL;
 		lpfn_CommandFusionAPI = NULL;
@@ -50,8 +52,7 @@ public:
 	}
 	~CFusionMgr(void)
 	{
-		CloseAPILibrary();
-		UnloadAPILibrary();
+		DeInitializeLib();
 	}
 
 	bool InitializeLib(){
@@ -90,7 +91,7 @@ public:
 		}
 		dwResult = FAPI_SUCCESS;
 				
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 											  ADAPTER_INFO_WLAN, 
 											  &hAdapter, sizeof(DWORD), 
 											  &fapiAdapterInf, sizeof(FAPI_AdapterInfo), 
@@ -118,7 +119,7 @@ public:
 		DWORD dwPowerStatus = 0;
 		DWORD dwBytesReturned;
 		DWORD dwResult;
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 			POWER_CONTROL_WLAN_GET_POWER_STATUS, 
 			&hAdapter,sizeof (DWORD), &dwPowerStatus, sizeof(DWORD) , &dwBytesReturned); 
 		return dwPowerStatus;
@@ -127,7 +128,7 @@ public:
 	{
 		DWORD hAdapter = FindFirstWLANAdapter();
 		DWORD dwResult;
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 			POWER_CONTROL_WLAN_ENABLE_POWER, 
 			&hAdapter,sizeof (DWORD), NULL, 0 ,NULL); 
 		return 0;
@@ -138,12 +139,12 @@ public:
 		DWORD dwResult;		
 		DWORD hAdapter = FindFirstWLANAdapter();
 
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 			POWER_CONTROL_WLAN_DISABLE_POWER, 
 			&hAdapter,sizeof (DWORD), NULL, 0 ,NULL);
 		return 0;
 	}
-	BOOL AddFusionProfile(PVOID pProfile)
+	BOOL AddProfile(PVOID pProfile)
 	{
 		DWORD         dwResult;
 		FAPI_AddedWLANProfileParams  fapiAddedWLANProfileParams;
@@ -171,7 +172,7 @@ public:
 			
 		}
 
-		dwResult = lpfn_CommandFusionAPI( CFusionMgr::m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 											  ADD_WLAN_PROFILE, 
 											  pProfile,structSize,  
 											  &fapiAddedWLANProfileParams, sizeof(fapiAddedWLANProfileParams), 
@@ -206,7 +207,7 @@ public:
 		selNConn.bPersistent = TRUE;
 
 		memcpy (selNConn.pszProfileID,pszProfileID,FAPI_MAX_GUID_STRING_LENGTH * sizeof(TCHAR)); 
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, SELECT_AND_CONNECT_WLAN_PROFILE, &selNConn,sizeof (FAPI_SelectAndConnectParams), NULL, 0 ,NULL);
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, SELECT_AND_CONNECT_WLAN_PROFILE, &selNConn,sizeof (FAPI_SelectAndConnectParams), NULL, 0 ,NULL);
 		if(dwResult != FAPI_SUCCESS)
 		{
 			FusionDisplayLastError();
@@ -249,7 +250,7 @@ public:
 		DWORD         dwResult;
 
 		dwResult = FAPI_SUCCESS;
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 					DATA_EXPORT_OPERATION_WLAN_PROFILE, &exppro, sizeof(FAPI_ExportProfile_1),  NULL, 0, NULL);
 
 		if(dwResult != FAPI_SUCCESS) {
@@ -286,7 +287,7 @@ public:
 		_tcsncpy(exppro.pszFilePath,&szPath[0],wcslen(&szPath[0]));
 
 		DWORD  dwResult = FAPI_SUCCESS;
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 					DATA_EXPORT_OPERATION_WLAN_PROFILE, &exppro, sizeof(FAPI_ExportProfile_1),  NULL, 0, NULL);
 
 		if(dwResult != FAPI_SUCCESS) {
@@ -314,7 +315,7 @@ public:
 		PFAPI_AdapterLink  pfapiAdapterLink = NULL;
 			
 
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 										  ADAPTER_WLAN_GET_BUFFER_SIZE, 
 										  NULL, 0, 
 										  &dwAdapterBufLen, sizeof(DWORD), 
@@ -322,7 +323,7 @@ public:
 		if( dwResult == FAPI_SUCCESS ) {
 			pFusionData = (PBYTE)calloc( 1, dwAdapterBufLen );
 			if( pFusionData != NULL) {
-				dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+				dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 												  ADAPTER_WLAN_GET_ENUM_DATA, 
 												  NULL, 0, 
 												  pFusionData, dwAdapterBufLen, 
@@ -344,7 +345,7 @@ public:
 	DWORD DeleteFusionProfile(TCHAR *pszGUID)
 	{
 		DWORD dwResult;
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 									  DELETE_WLAN_PROFILE, 
 									  pszGUID,FAPI_MAX_GUID_STRING_LENGTH*2, 
 									  NULL, 0, 
@@ -361,6 +362,18 @@ public:
 		return dwResult;
 	}
 
+	void DumpReturnResult(DWORD dwResult) {
+			switch(dwResult){
+				case FAPI_ERROR_MEMORY_ALLOCATION: OutputDebugString(_T("Error: FAPI_ERROR_MEMORY_ALLOCATION\n"));break;
+				case FAPI_ERROR_FUSION_API_HANDLE_INVALID: OutputDebugString(_T("Error: FAPI_INVALID_ACCESS_TYPE\n"));break;
+				case FAPI_ERROR_COMM_MODE_IN_USE : OutputDebugString(_T("Error: FAPI_ERROR_COMM_MODE_IN_USE \n"));break;
+				case FAPI_ERROR_STAT_MODE_LIMIT : OutputDebugString(L"Error: FAPI_ERROR_STAT_MODE_LIMIT \n");break;				
+				case FAPI_ERROR_TEXT_LEN : OutputDebugString(L"Error: FAPI_ERROR_TEXT_LEN \n");break;				
+				case FAPI_ERROR_NPCS_RADIO_DISABLE: OutputDebugString(L"Error: FAPI_ERROR_NPCS_RADIO_DISABLE\n");break;
+				default:
+				case FAPI_FAILURE: OutputDebugString(_T("Error: FAPI_FAILURE\n"));break;				
+			}
+	}
 
 	DWORD EnumerateAndDeleteProfiles()
 	{
@@ -371,7 +384,7 @@ public:
 		PFAPI_ProfileLink	pfapiProfileLink = NULL;
 		PFAPI_WLANProfile	pfapiWLANProfile = NULL;
 
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 										  ENUMERATE_PROFILES_WLAN_GET_BUFFER_SIZE, 
 										  NULL, 0, 
 										  &dwBufLen, sizeof(DWORD), 
@@ -382,7 +395,7 @@ public:
 			pFusionData = (PBYTE)calloc( 1, dwBufLen );
 			if( pFusionData != NULL)
 			{
-				dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+				dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 												  ENUMERATE_PROFILES_WLAN_GET_PROFILES_DATA, 
 												  NULL, 0, 
 												  pFusionData, dwBufLen, 
@@ -421,7 +434,7 @@ public:
 		if(m_hInstFusionDLL==0)
 		{
 		
-			m_hInstFusionDLL = (DWORD)LoadLibrary(L"FusionPublicAPI.DLL");
+			m_hInstFusionDLL = (HINSTANCE)LoadLibrary(L"FusionPublicAPI.DLL");
 			if (!m_hInstFusionDLL) {
 				return -1;
 			}
@@ -454,8 +467,12 @@ public:
 	*******************************************************************************/
 	DWORD OpenAPILibrary()
 	{
-		if( lpfn_OpenFusionAPI(&m_hInstFusionDLL,COMMAND_MODE ,L"FusionXML") != FAPI_SUCCESS )	
+		DWORD dwResult = lpfn_OpenFusionAPI(&m_hFusionAPI,COMMAND_MODE ,L"FusionXML");
+	
+		if( dwResult != FAPI_SUCCESS ){
+			DumpReturnResult(dwResult);
 			return -1;
+		}
 		else
 			return 0;
 	}
@@ -468,9 +485,10 @@ public:
 	*******************************************************************************/
 	void  CloseAPILibrary()
 	{
-		if(m_hInstFusionDLL!=NULL)
-			lpfn_CloseFusionAPI(m_hInstFusionDLL);
-		return;
+		if(m_hFusionAPI!=0){
+			lpfn_CloseFusionAPI(m_hFusionAPI);
+			m_hFusionAPI = 0;
+		}
 	}
 
 	/******************************************************************************
@@ -484,6 +502,7 @@ public:
 		if(m_hInstFusionDLL) {
 			FreeLibrary((HMODULE)m_hInstFusionDLL);
 			m_hInstFusionDLL = 0;
+			
 			lpfn_OpenFusionAPI = NULL;
 			lpfn_CloseFusionAPI = NULL;
 			lpfn_CommandFusionAPI = NULL;
@@ -496,7 +515,7 @@ public:
 	{
 		TCHAR szLastError[FAPI_ERROR_TEXT_LEN / sizeof(TCHAR)];
 		
-		lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		lpfn_CommandFusionAPI( m_hFusionAPI, 
 							   ERROR_INFO_GET_LAST_ERROR, 
 							   NULL, 0,
 							   szLastError, FAPI_ERROR_TEXT_LEN, 
@@ -519,7 +538,7 @@ public:
 		int i;
 
 
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 										  GET_FUSION_VERSION_BUFFER_SIZE, 
 										  NULL, 0, 
 										  &dwVersionBufLen, sizeof(DWORD), 
@@ -530,7 +549,7 @@ public:
 			pFusionData = (PBYTE)calloc( 1, dwVersionBufLen );
 			if( pFusionData != NULL)
 			{
-				dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+				dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 												  GET_FUSION_VERSION_DATA, 
 												  NULL, 0, 
 												  pFusionData, dwVersionBufLen, 
@@ -562,7 +581,7 @@ public:
 		DWORD dwQuality = 0;
 		DWORD dwBytesReturned = 0;
 		DWORD dwResult;
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 			RF_SIGNAL_QUALITY_WLAN_GET, 
 			&hAdapter,sizeof (DWORD), &dwQuality, sizeof(DWORD) , &dwBytesReturned); 
 		return dwQuality;
@@ -574,7 +593,7 @@ public:
 		DWORD dwSignal = 0;
 		DWORD dwBytesReturned = 0;
 		DWORD dwResult;
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 			RF_SIGNAL_STRENGTH_WLAN_GET, 
 			&hAdapter,sizeof (DWORD), &dwSignal, sizeof(DWORD) , &dwBytesReturned); 
 		return dwSignal;
@@ -586,7 +605,7 @@ public:
 		DWORD dwConnStatus = 0;
 		DWORD dwBytesReturned = 0;
 		DWORD dwResult;
-		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+		dwResult = lpfn_CommandFusionAPI( m_hFusionAPI, 
 			CONNECTION_STATUS_WLAN_GET, 
 			&hAdapter,sizeof (DWORD), &dwConnStatus, sizeof(DWORD) , &dwBytesReturned); 
 		return dwConnStatus;

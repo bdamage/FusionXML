@@ -53,7 +53,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		if(lpfnFXML_AddProfile){
 		//	lpfnFXML_DelAllProfiles(NULL,0,NULL);
-			lpfnFXML_AddProfile(NULL,0,_T("\"\\WiFiConfMaster.xml\""));
+		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\WiFiConfMaster.xml\""));
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\FusionCfgMaster.xml\""));
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\example_tkip_dhcp.xml\""));
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\example_aes_dhcp.xml\""));
@@ -63,7 +63,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\LEAP_profile.xml\""));
 
-		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\eap_fast_profile.xml\""));
+			lpfnFXML_AddProfile(NULL,0,_T("\"\\eap_fast_profile.xml\""));
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\example_eap_fast_profile.xml\""));
 		
 
