@@ -1503,8 +1503,6 @@ int processData(TiXmlDocument *pDoc)
 
 	memset(tcszExportFilename,0,sizeof(tcszExportFilename));
 	fxml.GetText(pRootElm,tcszExportFilename,"ExportFileName",260);
-	
-	PVOID profile;
 
 	DWORD dwVersion = GetStructVersion();
 	switch(dwVersion)
