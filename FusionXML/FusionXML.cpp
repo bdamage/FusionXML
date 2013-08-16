@@ -17,12 +17,12 @@ typedef	DWORD (WINAPI* LPFN_COMMAND_FUSION_API)(DWORD,DWORD,PVOID,DWORD,PVOID,DW
 
 //defines globals used withing high level APIs. 
 HINSTANCE g_hInst = NULL;
-static DWORD	   				g_hInstFusionDLL      = 0;
+/*static DWORD	   				g_hInstFusionDLL      = 0;
 static LPFN_OPEN_FUSION_API		lpfn_OpenFusionAPI    = NULL;
 static LPFN_CLOSE_FUSION_API	lpfn_CloseFusionAPI   = NULL;
 static LPFN_COMMAND_FUSION_API	lpfn_CommandFusionAPI = NULL;
+*/
 
-DWORD FusionFindFirstWLANAdapter();
 BOOL AddFusionProfile(PVOID pProfile);
 int processData(TiXmlDocument *pDoc);
 void AddLog(DWORD color, const TCHAR *lpszText, ...);
@@ -33,7 +33,7 @@ BOOL bConnect = FALSE;
 BOOL bExport = FALSE;
 
 TCHAR tcszExportFilename[260];
-TCHAR g_pszFusionVersionStr[FAPI_MAX_MODULE_VERSION_SIZE];
+//TCHAR g_pszFusionVersionStr[FAPI_MAX_MODULE_VERSION_SIZE];
 
 
 CFusionMgr g_fusion;  //Common Fusion API wrapper
@@ -49,8 +49,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	case DLL_PROCESS_ATTACH:
 		{
 			ClearLog();
-			if(InitializeFusion()!=0)
+			AddLog(0,_T("Trying to load Fusion API"));
+			if(g_fusion.InitializeLib()==false){
+				AddLog(1,_T("Error loading Fusion API!"));
 				return FALSE;
+			}
+		
+			AddLog(0,_T("Initialization of Fusion API Success!"));
 		}
 		break;
 	case DLL_THREAD_ATTACH:
@@ -58,7 +63,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	case DLL_THREAD_DETACH:
 		break;
 	case DLL_PROCESS_DETACH:
-		DeinitializeFusion();
+		AddLog(0,_T("Unloading Fusion API!"));
+		g_fusion.DeInitializeLib();
 		break;
 	}
     return TRUE;
@@ -201,37 +207,37 @@ DWORD GetStructVersion()
 {
 	DWORD dwVer = FAPI_PROFILE_2_VERSION; 
 
-	if(_tcsncmp(g_pszFusionVersionStr,_T("2.4."),4)==0){
+	if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("2.4."),4)==0){
 		dwVer = FAPI_PROFILE_2_VERSION; 
 	}
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("2.35."),5)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("2.35."),5)==0){
 		dwVer = FAPI_PROFILE_3_VERSION;
 	} 
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("2.5."),4)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("2.5."),4)==0){
 		dwVer = FAPI_PROFILE_3_VERSION;
 	}
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("2.55."),5)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("2.55."),5)==0){
 		dwVer = FAPI_PROFILE_4_VERSION;
 	}
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("2.56."),5)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("2.56."),5)==0){
 		dwVer = FAPI_PROFILE_6_VERSION;
 	} 
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("2.57."),5)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("2.57."),5)==0){
 		dwVer = FAPI_PROFILE_6_VERSION;
 	} 
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("2.61."),5)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("2.61."),5)==0){
 		dwVer = FAPI_PROFILE_5_VERSION;
 	} 
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("2.60."),5)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("2.60."),5)==0){
 		dwVer = FAPI_PROFILE_5_VERSION;
 	}
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("3.00."),5)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("3.00."),5)==0){
 		dwVer = FAPI_PROFILE_7_VERSION;
 	}
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("3.20."),5)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("3.20."),5)==0){
 		dwVer = FAPI_PROFILE_8_VERSION;
 	}
-	else if(_tcsncmp(g_pszFusionVersionStr,_T("3.30."),5)==0){
+	else if(_tcsncmp(g_fusion.m_pszFusionVersionStr,_T("3.30."),5)==0){
 		dwVer = FAPI_PROFILE_9_VERSION;
 	}
 	return dwVer;
@@ -1504,40 +1510,40 @@ int processData(TiXmlDocument *pDoc)
 	{
 		default:
 		case FAPI_PROFILE_2_VERSION:
-			if(AddFusionProfile((PVOID)&ParseProfile2(fxml)))
+			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile2(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_3_VERSION:
-			if(AddFusionProfile((PVOID)&ParseProfile3(fxml)))
+			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile3(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_4_VERSION:
-			if(AddFusionProfile((PVOID)&ParseProfile4(fxml)))
+			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile4(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_5_VERSION:
-			if(AddFusionProfile((PVOID)&ParseProfile5(fxml)))
+			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile5(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_6_VERSION:			
-			if(AddFusionProfile((PVOID)&ParseProfile6(fxml)))
+			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile6(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_7_VERSION:
 			{
 				void* p = ParseProfile7(fxml);
-				BOOL bRet = AddFusionProfile((PVOID)p);
+				BOOL bRet = g_fusion.AddFusionProfile((PVOID)p);
 				free(p);
 				if(bRet)
 					return SUCCESSFULL;
 			}
 			break;
 		case FAPI_PROFILE_8_VERSION:
-			if(AddFusionProfile((PVOID)&ParseProfile8(fxml)))
+			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile8(fxml)))
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_9_VERSION:
-			if(AddFusionProfile((PVOID)&ParseProfile9(fxml)))
+			if(g_fusion.AddFusionProfile((PVOID)&ParseProfile9(fxml)))
 				return SUCCESSFULL;
 			break;
 	}
@@ -1566,333 +1572,18 @@ void DumpLastError(){
 
 }
 
-/******************************************************************************
-* SYNOPSIS:     DWORD FusionSampleLoadAPILibrary()
-*
-* DESCRIPTION:  Dynamically loads fusion public API dll and get required 
-*               function pointers
-*
-* PARAMETERS:   None
-*
-* RETURN VALUE: FUSION_SAMP_ERROR_SUCCESS or string tabel error ID
-*******************************************************************************/
-DWORD FusionSampleLoadAPILibrary()
-{
-	if(g_hInstFusionDLL==0) {
-	
-		g_hInst = LoadLibrary(L"FusionPublicAPI.DLL");
-		DumpLastError();
-		g_hInstFusionDLL = (DWORD)g_hInst;
-		
-		if (g_hInstFusionDLL==NULL) {
-			OutputDebugString(_T("Error loading fusion dll."));
-			return -1;
-		}
-
-
-		lpfn_OpenFusionAPI		= (LPFN_OPEN_FUSION_API)	GetProcAddress((HMODULE)g_hInstFusionDLL, _T("OpenFusionAPI"));
-		lpfn_CloseFusionAPI		= (LPFN_CLOSE_FUSION_API)	GetProcAddress((HMODULE)g_hInstFusionDLL, _T("CloseFusionAPI"));
-		lpfn_CommandFusionAPI	= (LPFN_COMMAND_FUSION_API)	GetProcAddress((HMODULE)g_hInstFusionDLL, _T("CommandFusionAPI"));
-
-		if( (!lpfn_OpenFusionAPI) || (!lpfn_CloseFusionAPI) || (!lpfn_CommandFusionAPI)  )
-		{
-			FreeLibrary((HMODULE)g_hInstFusionDLL);
-			g_hInstFusionDLL = 0;
-			lpfn_OpenFusionAPI = NULL;
-			lpfn_CloseFusionAPI = NULL;
-			lpfn_CommandFusionAPI = NULL;
-			return -2;
-		}
-	}
-	
-	return 0;
-
-}
-
-/******************************************************************************
-* SYNOPSIS:     DWORD FusionFindFirstWLANAdapter()
-*
-* DESCRIPTION:  Finds the first WLAN adapter
-*
-* PARAMETERS:   None.
-*
-* RETURN VALUE: Adpter handle or 0. 
-*******************************************************************************/
-DWORD FusionFindFirstWLANAdapter()
-{
-	DWORD   dwAdapterBufLen, dwResult,dwReturn = 0;
-	PBYTE   pFusionData = NULL;
-	PFAPI_AdapterIDHeader pfapiAdapterHeader=NULL;
-	PFAPI_AdapterLink  pfapiAdapterLink = NULL;
-		
-
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		                              ADAPTER_WLAN_GET_BUFFER_SIZE, 
-									  NULL, 0, 
-									  &dwAdapterBufLen, sizeof(DWORD), 
-									  NULL);
-	if( dwResult == FAPI_SUCCESS )
-	{
-		pFusionData = (PBYTE)calloc( 1, dwAdapterBufLen );
-		if( pFusionData != NULL)
-		{
-			dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-				                              ADAPTER_WLAN_GET_ENUM_DATA, 
-											  NULL, 0, 
-											  pFusionData, dwAdapterBufLen, 
-											  NULL);
-			if( dwResult == FAPI_SUCCESS )
-			{
-				pfapiAdapterHeader  =  (PFAPI_AdapterIDHeader)pFusionData;
-				if( pfapiAdapterHeader -> numAdapters)
-				{
-					pfapiAdapterLink =  (PFAPI_AdapterLink) ( pFusionData + sizeof( FAPI_AdapterIDHeader  )  );
-					dwReturn = pfapiAdapterLink->Pointer.pWLANAdapterID->dwAdapterHandle;
-				}
-			}	
-			free( pFusionData );			
-		}
-	}
-	return dwReturn;
-}
-
-DWORD DeleteFusionProfile(TCHAR *pszGUID)
-{
-	DWORD dwResult;
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-	                              DELETE_WLAN_PROFILE, 
-								  pszGUID,FAPI_MAX_GUID_STRING_LENGTH*2, 
-								  NULL, 0, 
-								  NULL);
-	
-
-	if(dwResult==FAPI_SUCCESS)
-		AddLog(0,_T("Successfully deleted profile %s"),pszGUID);
-	else
-	{
-		FusionSampleDisplayLastError();
-		AddLog(0,_T("Error code %d , Unsuccessfully deleted profile %s"),dwResult,pszGUID);
-	
-	}
-
-	return dwResult;
-}
-
-
-DWORD EnemurateAndDeleteProfiles()
-{
-	DWORD   dwBufLen, dwResult,dwReturn = 0;
-	PBYTE   pFusionData = NULL;
-	PBYTE	pNextProfile = NULL;
-	PFAPI_ProfileHeader	pfapiProfileheader = NULL;
-	PFAPI_ProfileLink	pfapiProfileLink = NULL;
-	PFAPI_WLANProfile	pfapiWLANProfile = NULL;
-
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-									  ENUMERATE_PROFILES_WLAN_GET_BUFFER_SIZE, 
-									  NULL, 0, 
-									  &dwBufLen, sizeof(DWORD), 
-									  NULL);
-
-	if( dwResult == FAPI_SUCCESS )
-	{
-		pFusionData = (PBYTE)calloc( 1, dwBufLen );
-		if( pFusionData != NULL)
-		{
-			dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-				                              ENUMERATE_PROFILES_WLAN_GET_PROFILES_DATA, 
-											  NULL, 0, 
-											  pFusionData, dwBufLen, 
-											  NULL);
-			if( dwResult == FAPI_SUCCESS )
-			{
-				pfapiProfileheader  =  (PFAPI_ProfileHeader)pFusionData;
-								
-				if(pfapiProfileheader->numProfiles > FAPI_MAX_WLAN_NUM_PROFILES)
-						pfapiProfileheader->numProfiles = FAPI_MAX_WLAN_NUM_PROFILES;
-
-				pfapiProfileLink =  (PFAPI_ProfileLink) ( pFusionData + sizeof( FAPI_ProfileHeader  )  );
-
-				for(int i=0; i<(int)pfapiProfileheader->numProfiles; i++, pfapiProfileLink++)			
-				{
-					DeleteFusionProfile(pfapiProfileLink->Pointer.pWLANProfile->pszProfileID);
-					AddLog(0,_T("Profile enum %s"),pfapiProfileLink->Pointer.pWLANProfile->pszProfileID);			
-				}
-				
-			}	
-			free( pFusionData );			
-		}
-	}
-	return dwReturn;
-}
-
-
-/******************************************************************************
-* SYNOPSIS:     DWORD FusionSampleOpenAPILibrary()
-*
-* DESCRIPTION:  Open Fusion Public API library. 
-*
-* PARAMETERS:   None
-*
-* RETURN VALUE: FUSION_SAMP_ERROR_SUCCESS or string tabel error ID
-*******************************************************************************/
-DWORD FusionSampleOpenAPILibrary()
-{
-	if( lpfn_OpenFusionAPI(&g_hInstFusionDLL,COMMAND_MODE ,L"_FusionXML_") != FAPI_SUCCESS ){
-		return -1;
-	} else{
-		return 0;
-	}
-}
-
-/******************************************************************************
-* SYNOPSIS:     void  FusionSampleCloseAPILibrary()
-*
-* DESCRIPTION:  Close Fusion Public API library. 
-*
-* PARAMETERS:   None
-*
-* RETURN VALUE: None
-*******************************************************************************/
-void  FusionSampleCloseAPILibrary()
-{
-	if(g_hInstFusionDLL!=NULL)
-		lpfn_CloseFusionAPI(g_hInstFusionDLL);
-	return;
-}
-
-/******************************************************************************
-* SYNOPSIS:     void FusionSampleUnloadAPILibrary()
-*
-* DESCRIPTION:  Unload Fusion Public API dll
-*
-* PARAMETERS:   None
-*
-* RETURN VALUE: None
-*******************************************************************************/
-void FusionSampleUnloadAPILibrary()
-{
-	if(g_hInstFusionDLL)
-	{
-		FreeLibrary((HMODULE)g_hInstFusionDLL);
-		g_hInstFusionDLL = 0;
-		lpfn_OpenFusionAPI = NULL;
-		lpfn_CloseFusionAPI = NULL;
-		lpfn_CommandFusionAPI = NULL;
-		
-	}
-}
-
-
-/******************************************************************************
-* SYNOPSIS:     void  FusionSampleDisplayLastError(HWND hWnd, PTCHAR pszMsgTitle)
-*
-* DESCRIPTION:  Display the last error given by  fusion public API 
-*
-* PARAMETERS:   hWnd - Parent window
-*               pszMsgTitle - Title of the message
-*
-* RETURN VALUE: None. Message box is displayed. 
-*
-* NOTES:        Displayed message may not be meaningful if Fusion functions are 
-*               called from multiple threads
-*******************************************************************************/
-void  FusionSampleDisplayLastError()
-{
-	TCHAR szLastError[FAPI_ERROR_TEXT_LEN / sizeof(TCHAR)];
-	
-	lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		                   ERROR_INFO_GET_LAST_ERROR, 
-						   NULL, 0,
-						   szLastError, FAPI_ERROR_TEXT_LEN, 
-						   NULL);
-	
-	AddLog(1,_T("%s"),szLastError);
-}
 
 
 
-/******************************************************************************
-* SYNOPSIS:     void FusionSampleGetWLANVersions( LPFUSION_SAMP_VERSION_LIST pVersionList)
-*
-* DESCRIPTION:  Get the fusion component version list
-*
-* PARAMETERS:   pVersionList - buffer to receive component versions
-*
-* RETURN VALUE: None. Parameter pVersionList is updated with the component versions.
-*******************************************************************************/
-void FusionSampleGetWLANVersions( LPFUSION_SAMP_VERSION_LIST pVersionList)
-{
-	DWORD dwResult,dwVersionBufLen;
-	PBYTE pFusionData;
-	PFAPI_FusionVersionInfo pfapiVerInfo;
-	int i;
 
-
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		                              GET_FUSION_VERSION_BUFFER_SIZE, 
-									  NULL, 0, 
-									  &dwVersionBufLen, sizeof(DWORD), 
-									  NULL);
-	
-	if( dwResult == FAPI_SUCCESS ) {
-		pFusionData = (PBYTE)calloc( 1, dwVersionBufLen );
-		if( pFusionData != NULL) {
-			dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-				                              GET_FUSION_VERSION_DATA, 
-											  NULL, 0, 
-											  pFusionData, dwVersionBufLen, 
-											  NULL);
-			if( dwResult == FAPI_SUCCESS ) {
-				pVersionList->dwVersionCount =  ( (PFAPI_FusionVersionHeader)pFusionData ) -> dwNumVersionInfo;
-				pfapiVerInfo =  (PFAPI_FusionVersionInfo) ( pFusionData + sizeof( FAPI_FusionVersionHeader  )  );
-				for(i=0; i<(int)pVersionList->dwVersionCount; i++, pfapiVerInfo++) {
-					_tcscpy(pVersionList->fapiVersionList[i].pszFriendlyCompName, pfapiVerInfo -> pszFriendlyCompName);
-					_tcscpy(pVersionList->fapiVersionList[i].pszVersionStr, pfapiVerInfo -> pszVersionStr);
-						
-					if(i==0)
-					 _tcscpy(g_pszFusionVersionStr, pfapiVerInfo -> pszVersionStr);
-
-					AddLog(0,_T("%s %s"),pVersionList->fapiVersionList[i].pszFriendlyCompName,pVersionList->fapiVersionList[i].pszVersionStr);
-				}
-			}
-			free( pFusionData );
-		}
-	}
-
-
-	
-}
 
 BOOL GetFusionVersion()
 {
-	FusionSampleGetWLANVersions( &VersionList);
+	g_fusion.GetWLANVersions( &VersionList);
+	//_tcscpy(g_pszFusionVersionStr, VersionList -> pszVersionStr);
 	return TRUE;
 }
-
-BOOL ConnectToProfile(TCHAR *pszProfileID)
-{
-	DWORD dwResult;
-	FAPI_SelectAndConnectParams_1 selNConn;
-	memset (&selNConn, 0, sizeof (FAPI_SelectAndConnectParams_1));
-
-	selNConn.dwVersion = FAPI_SELECT_AND_CONNECT_VERSION;
-	selNConn.dwType = FAPI_SELECT_AND_CONNECT_TYPE;
-	selNConn.bPersistent = TRUE;					//Similar to turning off profile roaming.
-
-	memcpy (selNConn.pszProfileID,pszProfileID,FAPI_MAX_GUID_STRING_LENGTH * sizeof(TCHAR)); 
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, SELECT_AND_CONNECT_WLAN_PROFILE, &selNConn,sizeof (FAPI_SelectAndConnectParams), NULL, 0 ,NULL);
-	if(dwResult != FAPI_SUCCESS) {
-		FusionSampleDisplayLastError();
-		AddLog(1,_T("\nError connecting to profile!\n"));
-		return FALSE;
-	} else {
-		AddLog(1,_T("\nConnecting to profile successed!\n"));
-		return TRUE;
-	}
-}
-
-
+/*
 BOOL AddFusionProfile(PVOID pProfile)
 {
 	DWORD         dwResult;
@@ -1940,44 +1631,16 @@ BOOL AddFusionProfile(PVOID pProfile)
 		AddLog(0,_T("Profile ID %s\n"),fapiAddedWLANProfileParams.pszProfileID);
 
 		if(bConnect) {
-			ConnectToProfile(fapiAddedWLANProfileParams.pszProfileID);
+			g_fusion.ConnectToProfile(pszProfileID);
 		}
 		if(bExport) {
-			ExportProfile( fapiAddedWLANProfileParams.pszProfileID);
+			g_fusion.ExportProfile( fapiAddedWLANProfileParams.pszProfileID);
 		}
 		return TRUE;
 	}
 		
 }
-
-
- int InitializeFusion()
-{
-	int nResult = -1;
-	
-	AddLog(0,_T("Trying to load Fusion API"));
-	nResult =  FusionSampleLoadAPILibrary();
-	if( nResult == 0 ) {
-		AddLog(0,_T("Trying to open Fusion API"));
-		nResult =  FusionSampleOpenAPILibrary();
-		if(nResult!=0)
-			AddLog(0,_T("Error at open Fusion API"));
-	}else {
-		AddLog(1,_T("Error loading Fusion API!"));
-	}
-	if(nResult==0)
-		AddLog(0,_T("Initialize of Fusion API DONE!"));
-	
-	return nResult;
-}
-
- void DeinitializeFusion()
-{
-	AddLog(0,_T("Unloading Fusion API!"));
-	FusionSampleCloseAPILibrary();  
-	FusionSampleUnloadAPILibrary();
-}
-
+*/
 
 /************************************************
 
@@ -1991,79 +1654,15 @@ FUSIONXML_API int GetMAC( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const T
 {
 
 	AddLog(0,_T("GetMAC function was called!"));
-
-	DWORD         dwResult;
-	DWORD hAdapter = FusionFindFirstWLANAdapter();
-	FAPI_AdapterInfo fapiAdapterInf;
-
-
-	if(hAdapter==0) {
-		AddLog(1,_T("Couldn't retrieve Adapter handle!"));
-		return -1;
-	}
-	dwResult = FAPI_SUCCESS;
-	
-	
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-										  ADAPTER_INFO_WLAN, 
-										  &hAdapter, sizeof(DWORD), 
-										  &fapiAdapterInf, sizeof(FAPI_AdapterInfo), 
-										  NULL);
-
-	if(dwResult != FAPI_SUCCESS) {
-		FusionSampleDisplayLastError();
-		AddLog(1,_T("\nError reading MAC address - Check that ActiveSync is turned off or WLAN adapter is powered on!\n"));
-		return -2;
-	} else {
-		AddLog(0,_T("Got MAC successfully!\n"));		
-	}
-	TCHAR szBuffer[50];
-	wsprintf(szBuffer,_T("%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X"),fapiAdapterInf.macAddr[0],fapiAdapterInf.macAddr[1],fapiAdapterInf.macAddr[2],fapiAdapterInf.macAddr[3],fapiAdapterInf.macAddr[4],fapiAdapterInf.macAddr[5]);
-    _tcsncpy( szBuf, szBuffer, BufSize-1 );   
-	AddLog(0,_T("MAC address on first WLAN adapter is %s"),szBuffer);
-
+	g_fusion.GetMAC(szBuf, BufSize);
 	return 0;
 }
 
 FUSIONXML_API int ExportProfile( TCHAR *szGUID )
 {
 	AddLog(0,_T("ExportAllProfiles was called!"));
-	FAPI_ExportProfile exppro;	
-	ZeroMemory(&exppro,sizeof(FAPI_ExportProfile));
 	
-	exppro.dwVersion = FAPI_EXPORT_PROFILE_1_VERSION; 
-	exppro.dwType = FAPI_EXPORT_PROFILE_TYPE;
-	exppro.dwOutputFormat = FAPI_REG_FILE;
-
-	exppro.dwFlag = FAPI_SINGLE_PROFILE;
-	_tcsncpy(exppro.pszProfileID,&szGUID[0],wcslen(&szGUID[0]));
-	TCHAR szPath[] = _T("\\Application\\");
-	TCHAR szFileName[260];
-
-	if(_tcslen(tcszExportFilename)==0)
-		wsprintf(szFileName,_T("FusionXML_%s.reg"),szGUID);
-	else
-		_tcscpy(szFileName,tcszExportFilename);
-
-	_tcsncpy(exppro.pszFileName,&szFileName[0],wcslen(&szFileName[0]));
-	_tcsncpy(exppro.pszFilePath,&szPath[0],wcslen(&szPath[0]));
-	
-	DWORD         dwResult;
-
-	dwResult = FAPI_SUCCESS;
-	int len = sizeof(FAPI_ExportProfile);
-
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-				DATA_EXPORT_OPERATION_WLAN_PROFILE, &exppro, len,  NULL, 0, NULL);
-
-	
-	if(dwResult != FAPI_SUCCESS) {
-		FusionSampleDisplayLastError();
-		AddLog(1,_T("\nError exporting profile!\n"));
-		return FALSE;
-	}
-	AddLog(0,_T("Exported profile %s successfully!\n"),szGUID);		
-	return TRUE;	
+	return g_fusion.ExportProfile(szGUID);	
 }
 
 
@@ -2074,93 +1673,25 @@ extern "C"
 
 FUSIONXML_API int GetSignalQuality( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize )
 {
-	DWORD hAdapter = FusionFindFirstWLANAdapter();
-	DWORD dwQuality = 0;
-	DWORD dwBytesReturned = 0;
-	DWORD dwResult;
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		RF_SIGNAL_QUALITY_WLAN_GET, 
-		&hAdapter,sizeof (DWORD), &dwQuality, sizeof(DWORD) , &dwBytesReturned); 
-	return dwQuality;
+	return g_fusion.GetSignalQuality();
 }
 
 FUSIONXML_API int GetSignalStrength( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize )
 {
-	DWORD hAdapter = FusionFindFirstWLANAdapter();
-	DWORD dwSignal = 0;
-	DWORD dwBytesReturned = 0;
-	DWORD dwResult;
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		RF_SIGNAL_STRENGTH_WLAN_GET, 
-		&hAdapter,sizeof (DWORD), &dwSignal, sizeof(DWORD) , &dwBytesReturned); 
-	return dwSignal;
+	return g_fusion.GetSignalStrength();
 }
 
 //A blocking call to wait for a connection to establish.
 FUSIONXML_API int GetConnectionStatus( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize )
-{
-	DWORD hAdapter = FusionFindFirstWLANAdapter();
-	DWORD dwConnStatus = 0;
-	DWORD dwBytesReturned = 0;
-	DWORD dwResult;
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		CONNECTION_STATUS_WLAN_GET, 
-		&hAdapter,sizeof (DWORD), &dwConnStatus, sizeof(DWORD) , &dwBytesReturned); 
-	return dwConnStatus;
+{	
+	return g_fusion.GetConnectionStatus();
 }
 
-
-//Not finished
-FUSIONXML_API int GetAdapterStatus( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize )
-{
-	DWORD hAdapter = FusionFindFirstWLANAdapter();
-	DWORD dwConnStatus = 0;
-	DWORD dwBytesReturned = 0;
-	DWORD dwResult;
-	
-	FAPI_AdapterStat adapterStat = {0};
-	adapterStat.dwVersion = FAPI_ADAPTER_STAT_1_VERSION;
-	adapterStat.dwType =  FAPI_ADAPTER_STAT_TYPE;
-	
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		WLAN_ADAPTER_STATISTICS_GET, 
-		&hAdapter,sizeof (DWORD), &dwConnStatus, sizeof(DWORD) , &dwBytesReturned); 
-	return dwConnStatus;
-}
 
 FUSIONXML_API int ExportAllProfiles( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize )
 {
 	AddLog(0,_T("ExportAllProfiles was called!"));
-	FAPI_ExportProfile exppro;	
-	ZeroMemory(&exppro,sizeof(FAPI_ExportProfile));
-	
-	exppro.dwVersion = FAPI_EXPORT_PROFILE_1_VERSION; 
-	exppro.dwType = FAPI_EXPORT_PROFILE_TYPE;
-	exppro.dwOutputFormat = FAPI_REG_FILE;
-
-	exppro.dwFlag = FAPI_MULTIPLE_PROFILE;
-	TCHAR szPath[] = _T("\\Application\\");
-	TCHAR szFileName[] = _T("fusionprofiles.reg");
-
-	if(_tcslen(CmdLine)==0)
-		_tcsncpy(exppro.pszFileName,&szFileName[0],wcslen(&szFileName[0]));
-	else
-		_tcsncpy(exppro.pszFileName,CmdLine,wcslen(CmdLine));
-
-	_tcsncpy(exppro.pszFilePath,&szPath[0],wcslen(&szPath[0]));
-
-	DWORD         dwResult;
-
-	dwResult = FAPI_SUCCESS;
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-				DATA_EXPORT_OPERATION_WLAN_PROFILE, &exppro, sizeof(FAPI_ExportProfile_1),  NULL, 0, NULL);
-
-	if(dwResult != FAPI_SUCCESS) {
-		FusionSampleDisplayLastError();
-		AddLog(1,_T("\nError exporting profiles!\n"));
-		return FALSE;
-	}
-	AddLog(0,_T("Exported profiles successfully!\n"));		
+	g_fusion.ExportAllProfiles(CmdLine);
 	return TRUE;	
 }
 
@@ -2181,9 +1712,8 @@ FUSIONXML_API int SetLog( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const T
 
 FUSIONXML_API int DeleteAllProfiles( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize )
 {
-	AddLog(0,_T("DeleteAllProfiles was called!"));
-	EnemurateAndDeleteProfiles();
-
+	AddLog(0,_T("DeleteAllProfiles was called!"));	
+	g_fusion.EnumerateAndDeleteProfiles();
 	return 0;
 }
 
@@ -2197,37 +1727,20 @@ FUSIONXML_API int GetVersion( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, con
 FUSIONXML_API int PowerStatus( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize )
 {
 	AddLog(0,_T("PowerStatus was called!"));
-	DWORD hAdapter = FusionFindFirstWLANAdapter();
-	DWORD dwPowerStatus = 0;
-	DWORD dwBytesReturned;
-	DWORD dwResult;
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		POWER_CONTROL_WLAN_GET_POWER_STATUS, 
-		&hAdapter,sizeof (DWORD), &dwPowerStatus, sizeof(DWORD) , &dwBytesReturned); 
-	return dwPowerStatus;
+	return g_fusion.PowerStatus();
 }
 
 FUSIONXML_API int PowerOn( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize )
 {
 	AddLog(0,_T("PowerOn was called!"));
-	DWORD hAdapter = FusionFindFirstWLANAdapter();
-	DWORD dwResult;
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		POWER_CONTROL_WLAN_ENABLE_POWER, 
-		&hAdapter,sizeof (DWORD), NULL, 0 ,NULL); 
+	g_fusion.PowerOn();
 	return 0;
 }
 
 FUSIONXML_API int PowerOff( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize )
 {
 	AddLog(0,_T("PowerOff was called!"));
-    DWORD dwResult;
-	
-	DWORD hAdapter = FusionFindFirstWLANAdapter();
-
-	dwResult = lpfn_CommandFusionAPI( g_hInstFusionDLL, 
-		POWER_CONTROL_WLAN_DISABLE_POWER, 
-		&hAdapter,sizeof (DWORD), NULL, 0 ,NULL);
+	g_fusion.PowerOff();
 	return 0;
 }
 
@@ -2264,7 +1777,7 @@ FUSIONXML_API int AddProfile(SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, cons
 	TCHAR *pStartT = _tcschr((TCHAR*)CmdLine,'"');
 	if(pStartT==NULL) {
 		AddLog(1,_T("Error parsing command!"));
-		DeinitializeFusion();
+		g_fusion.DeInitializeLib();
 		return ERR_PARSING_CMD_ERROR;
 	}
 
@@ -2285,7 +1798,7 @@ FUSIONXML_API int AddProfile(SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, cons
 		if(pEndT==NULL) {
 			free(pString);
 			AddLog(1,_T("Error parsing command (no end \")!"));
-			DeinitializeFusion();
+			g_fusion.DeInitializeLib();
 			return ERR_PARSING_CMD_ERROR;
 		}		
 		pEndT[0]=0;

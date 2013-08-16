@@ -18,8 +18,10 @@ extern void AddLog(int color, const TCHAR *lpszText, ...);
 class CFusionMgr
 {
 
+public:
 	TCHAR m_pszFusionVersionStr[FAPI_MAX_MODULE_VERSION_SIZE];
 
+private:
 	//typedefs for Fusion Public API function prototypes
 	typedef DWORD (WINAPI* LPFN_OPEN_FUSION_API)   (PDWORD,FAPI_ACCESS_TYPE,PTCHAR);
 	typedef DWORD (WINAPI* LPFN_CLOSE_FUSION_API)  (DWORD);
@@ -44,8 +46,7 @@ public:
 		lpfn_CommandFusionAPI = NULL;
 		m_bConnect = false;
 		m_bExport = false;
-		LoadAPILibrary();
-		OpenAPILibrary();
+
 	}
 	~CFusionMgr(void)
 	{
@@ -53,6 +54,20 @@ public:
 		UnloadAPILibrary();
 	}
 
+	bool InitializeLib(){
+
+		if(LoadAPILibrary()==0)
+			if(OpenAPILibrary()==0)
+				return true;
+		
+		return false;
+	}
+
+	bool DeInitializeLib(){
+		CloseAPILibrary();
+		UnloadAPILibrary();
+		return true;
+	}
 
 
 	/************************************************
@@ -63,8 +78,6 @@ public:
 	*************************************************/
 	int GetMAC( TCHAR *szBuf, int BufSize )
 	{
-
-		AddLog(0,_T("GetMAC function was called!"));
 
 		DWORD         dwResult;
 		DWORD hAdapter = FindFirstWLANAdapter();
@@ -99,7 +112,37 @@ public:
 	}
 
 
+	int PowerStatus()
+	{
+		DWORD hAdapter = FindFirstWLANAdapter();
+		DWORD dwPowerStatus = 0;
+		DWORD dwBytesReturned;
+		DWORD dwResult;
+		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+			POWER_CONTROL_WLAN_GET_POWER_STATUS, 
+			&hAdapter,sizeof (DWORD), &dwPowerStatus, sizeof(DWORD) , &dwBytesReturned); 
+		return dwPowerStatus;
+	}
+	int PowerOn()
+	{
+		DWORD hAdapter = FindFirstWLANAdapter();
+		DWORD dwResult;
+		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+			POWER_CONTROL_WLAN_ENABLE_POWER, 
+			&hAdapter,sizeof (DWORD), NULL, 0 ,NULL); 
+		return 0;
+	}
 
+	int PowerOff()
+	{
+		DWORD dwResult;		
+		DWORD hAdapter = FindFirstWLANAdapter();
+
+		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+			POWER_CONTROL_WLAN_DISABLE_POWER, 
+			&hAdapter,sizeof (DWORD), NULL, 0 ,NULL);
+		return 0;
+	}
 	BOOL AddFusionProfile(PVOID pProfile)
 	{
 		DWORD         dwResult;
@@ -234,8 +277,7 @@ public:
 		TCHAR szPath[] = _T("\\Application\\");
 		TCHAR szFileName[] = _T("fusionprofiles.reg");
 
-		if(_tcslen(CmdLine)==0)
-		{
+		if(_tcslen(CmdLine)==0) {
 			_tcsncpy(exppro.pszFileName,&szFileName[0],wcslen(&szFileName[0]));
 			_tcsncpy(exppro.pszFilePath,&szPath[0],wcslen(&szPath[0]));
 
@@ -247,8 +289,7 @@ public:
 		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
 					DATA_EXPORT_OPERATION_WLAN_PROFILE, &exppro, sizeof(FAPI_ExportProfile_1),  NULL, 0, NULL);
 
-		if(dwResult != FAPI_SUCCESS)
-		{
+		if(dwResult != FAPI_SUCCESS) {
 			FusionDisplayLastError();
 			AddLog(1,_T("\nError exporting profiles!\n"));
 			return FALSE;
@@ -278,21 +319,17 @@ public:
 										  NULL, 0, 
 										  &dwAdapterBufLen, sizeof(DWORD), 
 										  NULL);
-		if( dwResult == FAPI_SUCCESS )
-		{
+		if( dwResult == FAPI_SUCCESS ) {
 			pFusionData = (PBYTE)calloc( 1, dwAdapterBufLen );
-			if( pFusionData != NULL)
-			{
+			if( pFusionData != NULL) {
 				dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
 												  ADAPTER_WLAN_GET_ENUM_DATA, 
 												  NULL, 0, 
 												  pFusionData, dwAdapterBufLen, 
 												  NULL);
-				if( dwResult == FAPI_SUCCESS )
-				{
+				if( dwResult == FAPI_SUCCESS ) {
 					pfapiAdapterHeader  =  (PFAPI_AdapterIDHeader)pFusionData;
-					if( pfapiAdapterHeader -> numAdapters)
-					{
+					if( pfapiAdapterHeader -> numAdapters) {
 						pfapiAdapterLink =  (PFAPI_AdapterLink) ( pFusionData + sizeof( FAPI_AdapterIDHeader  )  );
 						dwReturn = pfapiAdapterLink->Pointer.pWLANAdapterID->dwAdapterHandle;
 					}
@@ -314,13 +351,11 @@ public:
 									  NULL);
 		
 
-		if(dwResult==FAPI_SUCCESS)
+		if(dwResult==FAPI_SUCCESS) {
 			AddLog(0,_T("Successfully deleted profile %s"),pszGUID);
-		else
-		{
+		} else {
 			FusionDisplayLastError();
 			AddLog(0,_T("Error code %d , Unsuccessfully deleted profile %s"),dwResult,pszGUID);
-		
 		}
 
 		return dwResult;
@@ -387,8 +422,7 @@ public:
 		{
 		
 			m_hInstFusionDLL = (DWORD)LoadLibrary(L"FusionPublicAPI.DLL");
-			if (!m_hInstFusionDLL)
-			{
+			if (!m_hInstFusionDLL) {
 				return -1;
 			}
 
@@ -397,8 +431,7 @@ public:
 			lpfn_CloseFusionAPI		= (LPFN_CLOSE_FUSION_API)	GetProcAddress((HMODULE)m_hInstFusionDLL, _T("CloseFusionAPI"));
 			lpfn_CommandFusionAPI	= (LPFN_COMMAND_FUSION_API)	GetProcAddress((HMODULE)m_hInstFusionDLL, _T("CommandFusionAPI"));
 
-			if( (!lpfn_OpenFusionAPI) || (!lpfn_CloseFusionAPI) || (!lpfn_CommandFusionAPI)  )
-			{
+			if( (!lpfn_OpenFusionAPI) || (!lpfn_CloseFusionAPI) || (!lpfn_CommandFusionAPI)  ) {
 				FreeLibrary((HMODULE)m_hInstFusionDLL);
 				m_hInstFusionDLL = 0;
 				lpfn_OpenFusionAPI = NULL;
@@ -448,8 +481,7 @@ public:
 	*******************************************************************************/
 	void UnloadAPILibrary()
 	{
-		if(m_hInstFusionDLL)
-		{
+		if(m_hInstFusionDLL) {
 			FreeLibrary((HMODULE)m_hInstFusionDLL);
 			m_hInstFusionDLL = 0;
 			lpfn_OpenFusionAPI = NULL;
@@ -524,4 +556,39 @@ public:
 		}
 	}
 
+	int GetSignalQuality()
+	{
+		DWORD hAdapter = FindFirstWLANAdapter();
+		DWORD dwQuality = 0;
+		DWORD dwBytesReturned = 0;
+		DWORD dwResult;
+		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+			RF_SIGNAL_QUALITY_WLAN_GET, 
+			&hAdapter,sizeof (DWORD), &dwQuality, sizeof(DWORD) , &dwBytesReturned); 
+		return dwQuality;
+	}
+
+	int GetSignalStrength()
+	{
+		DWORD hAdapter = FindFirstWLANAdapter();
+		DWORD dwSignal = 0;
+		DWORD dwBytesReturned = 0;
+		DWORD dwResult;
+		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+			RF_SIGNAL_STRENGTH_WLAN_GET, 
+			&hAdapter,sizeof (DWORD), &dwSignal, sizeof(DWORD) , &dwBytesReturned); 
+		return dwSignal;
+	}
+	//A blocking call to wait for a connection to establish.
+	int GetConnectionStatus()
+	{
+		DWORD hAdapter = FindFirstWLANAdapter();
+		DWORD dwConnStatus = 0;
+		DWORD dwBytesReturned = 0;
+		DWORD dwResult;
+		dwResult = lpfn_CommandFusionAPI( m_hInstFusionDLL, 
+			CONNECTION_STATUS_WLAN_GET, 
+			&hAdapter,sizeof (DWORD), &dwConnStatus, sizeof(DWORD) , &dwBytesReturned); 
+		return dwConnStatus;
+	}
 };
