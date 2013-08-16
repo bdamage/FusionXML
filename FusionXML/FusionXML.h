@@ -6,7 +6,7 @@
 // defined with this macro as being exported.
 
 
-#define _FUSION_XML_VERSION TEXT("1.20")
+#define _FUSION_XML_VERSION TEXT("2.0 beta")
 #define logfilename "xmlprofile.htm"
 #define logfilenameW _T("xmlprofile.htm")
 
