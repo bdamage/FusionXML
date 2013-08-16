@@ -16,7 +16,8 @@ typedef	DWORD (WINAPI* LPFN_COMMAND_FUSION_API)(DWORD,DWORD,PVOID,DWORD,PVOID,DW
 
 
 //defines globals used withing high level APIs. 
-static DWORD    				g_hInstFusionDLL      = 0;
+HINSTANCE g_hInst = NULL;
+static DWORD	   				g_hInstFusionDLL      = 0;
 static LPFN_OPEN_FUSION_API		lpfn_OpenFusionAPI    = NULL;
 static LPFN_CLOSE_FUSION_API	lpfn_CloseFusionAPI   = NULL;
 static LPFN_COMMAND_FUSION_API	lpfn_CommandFusionAPI = NULL;
@@ -45,7 +46,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	case DLL_PROCESS_ATTACH:
 		{
 			ClearLog();
-			InitializeFusion();
+			if(InitializeFusion()!=0)
+				return FALSE;
 		}
 		break;
 	case DLL_THREAD_ATTACH:
@@ -945,11 +947,12 @@ FAPI_PROFILE_6 ParseProfile6(CFusionXMLProfile &fxml)
 
 
 
-FAPI_PROFILE_7 ParseProfile7(CFusionXMLProfile &fxml)
+FAPI_PROFILE_7 *ParseProfile7(CFusionXMLProfile &fxml)
 {
-	FAPI_PROFILE_7  fapiProfile = {0}; //for 2.55 and 2.57
-	//ZeroMemory(&fapiProfile, sizeof(FAPI_PROFILE_6)); 
-
+	
+	FAPI_PROFILE_7  *pfapiProfile = (FAPI_PROFILE_7  *)malloc(sizeof(FAPI_PROFILE_7));
+	memset(pfapiProfile,0,sizeof(FAPI_PROFILE_7));
+	FAPI_PROFILE_7  &fapiProfile =  *pfapiProfile; //{0}; //for 3.00
 	fapiProfile.dwVersion = GetStructVersion();
 	AddLog(3,_T("Detected Fusion Structure Ver = %d"),fapiProfile.dwVersion);
 
@@ -966,7 +969,7 @@ FAPI_PROFILE_7 ParseProfile7(CFusionXMLProfile &fxml)
 	fapiProfile.NetworkType.Infrastructure.dwAuthentication = FAPI_AUTH_NONE;
 
 
-	fxml.SetProfileName(fapiProfile.pszName,sizeof(fapiProfile.pszName)/sizeof(TCHAR));
+	fxml.SetProfileName(fapiProfile.pszName,FAPI_MAX_PROFILE_NAME_LENGTH);
 	AddLog(3,_T("Profile Name = %s"),fapiProfile.pszName);
 	
 	fapiProfile.dwOpMode = (FAPI_WLAN_NETWORK_TYPE) fxml.GetOpMode(); 
@@ -1017,8 +1020,9 @@ FAPI_PROFILE_7 ParseProfile7(CFusionXMLProfile &fxml)
 	
 	//Default to 104 bit WEP if LEAP being used (modified Version 1.17)
 	if((fapiProfile.NetworkType.Infrastructure.dwAuthentication == FAPI_LEAP) && (fapiProfile.dwEncryption == FAPI_ENCRYPTION_NONE)) 
-		fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT;
-
+		fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT_PASSPH;
+	else if((fapiProfile.NetworkType.Infrastructure.dwAuthentication == FAPI_LEAP) && (fapiProfile.dwEncryption == FAPI_ENCRYPTION_104BIT_HEX))   //added in version 1.20 for sanity check
+		fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT_PASSPH;
 
 	fapiProfile.NetworkType.Infrastructure.dwSecurityMode = GetSecurityMode(fapiProfile.NetworkType.Infrastructure.dwAuthentication,fapiProfile.dwEncryption);
 
@@ -1041,12 +1045,14 @@ FAPI_PROFILE_7 ParseProfile7(CFusionXMLProfile &fxml)
 
 	fapiProfile.EncryptionAlgorithm.WEP40BitHexKey.dwWEPKeyIndex = (FAPI_WLAN_WEP_KEY_INDEX)dwKeyIndex;
 
+//	TCHAR passphrase[FAPI_MAX_PASSPHRASE_LENGTH];
+//	fxml.GetPassphrase(passphrase);
 
 	if(fapiProfile.dwEncryption == FAPI_ENCRYPTION_TKIP)
 		fxml.GetPassphrase(fapiProfile.EncryptionAlgorithm.TKIPPassphrase.pszTKIPPassphrase);
 	else if( fapiProfile.dwEncryption == FAPI_ENCRYPTION_AES)
 		fxml.GetPassphrase(fapiProfile.EncryptionAlgorithm.AESPassphrase.pszAESPassphrase);
-
+//	else if()
 	
 	TiXmlElement *pElmProf = fxml.GetRootElement();
 
@@ -1086,8 +1092,7 @@ FAPI_PROFILE_7 ParseProfile7(CFusionXMLProfile &fxml)
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.RemoteCertInstall.pszUserCertFName,"UserCertFilename",FAPI_MAX_CERT_FNAME_LENGTH);
 	}
 	
-	return fapiProfile;
-
+	return pfapiProfile; //fapiProfile;
 }
 
 
@@ -1165,7 +1170,8 @@ FAPI_PROFILE_8 ParseProfile8(CFusionXMLProfile &fxml)
 	//Default to 104 bit WEP if LEAP being used (modified Version 1.17)
 	if((fapiProfile.NetworkType.Infrastructure.dwAuthentication == FAPI_LEAP) && (fapiProfile.dwEncryption == FAPI_ENCRYPTION_NONE)) 
 		fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT;
-
+	else if((fapiProfile.NetworkType.Infrastructure.dwAuthentication == FAPI_LEAP) && (fapiProfile.dwEncryption == FAPI_ENCRYPTION_104BIT_HEX))   //added in version 1.20 for sanity check
+		fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT_PASSPH;
 
 	fapiProfile.NetworkType.Infrastructure.dwSecurityMode = GetSecurityMode(fapiProfile.NetworkType.Infrastructure.dwAuthentication,fapiProfile.dwEncryption);
 
@@ -1223,14 +1229,12 @@ FAPI_PROFILE_8 ParseProfile8(CFusionXMLProfile &fxml)
 	}
 
 	pServerCert = fxml.GetElementSafe(pElmProf,"LocalUserCert");		
-	if(pServerCert)
-	{	
+	if(pServerCert){	
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.LocalCertInstall.pszUserCertFName,"UserCertFilename",FAPI_MAX_CERT_FNAME_LENGTH);
 	}
 
 	pServerCert = fxml.GetElementSafe(pElmProf,"RemoteUserCert");		
-	if(pServerCert)
-	{
+	if(pServerCert){
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.RemoteCertInstall.pszServerName,"ServerName",FAPI_MAX_REMOTE_SERVER_NAME_LEN);
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.RemoteCertInstall.pszRemoteUserName,"UserName",FAPI_MAX_REMOTE_USER_NAME_LEN);
 		fxml.GetText(pServerCert,fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCertInstall.RemoteCertInstall.pszRemotePassword,"Password",FAPI_MAX_REMOTE_PASSWORD_LEN);
@@ -1315,6 +1319,8 @@ FAPI_PROFILE_9 ParseProfile9(CFusionXMLProfile &fxml)
 	//Default to 104 bit WEP if LEAP being used (modified Version 1.17)
 	if((fapiProfile.NetworkType.Infrastructure.dwAuthentication == FAPI_LEAP) && (fapiProfile.dwEncryption == FAPI_ENCRYPTION_NONE)) 
 		fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT;
+	else if((fapiProfile.NetworkType.Infrastructure.dwAuthentication == FAPI_LEAP) && (fapiProfile.dwEncryption == FAPI_ENCRYPTION_104BIT_HEX))   //added in version 1.20 for sanity check
+		fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT_PASSPH;
 
 	fapiProfile.NetworkType.Infrastructure.dwSecurityMode = GetSecurityMode(fapiProfile.NetworkType.Infrastructure.dwAuthentication,fapiProfile.dwEncryption);
 
@@ -1515,8 +1521,13 @@ int processData(TiXmlDocument *pDoc)
 				return SUCCESSFULL;
 			break;
 		case FAPI_PROFILE_7_VERSION:
-			if(AddFusionProfile((PVOID)&ParseProfile7(fxml)))
-				return SUCCESSFULL;
+			{
+				void* p = ParseProfile7(fxml);
+				BOOL bRet = AddFusionProfile((PVOID)p);
+				free(p);
+				if(bRet)
+					return SUCCESSFULL;
+			}
 			break;
 		case FAPI_PROFILE_8_VERSION:
 			if(AddFusionProfile((PVOID)&ParseProfile8(fxml)))
@@ -1528,6 +1539,28 @@ int processData(TiXmlDocument *pDoc)
 			break;
 	}
 	return ERR_ADDING_PROFILE;
+}
+
+void DumpLastError(){	
+	LPVOID lpMsgBuf;
+	FormatMessage( 
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+		FORMAT_MESSAGE_FROM_SYSTEM | 
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		GetLastError(),
+		0, // Default language
+		(LPTSTR) &lpMsgBuf,
+		0,
+		NULL 
+	);
+	// Process any inserts in lpMsgBuf.
+	// ...
+	// Display the string.
+	OutputDebugString((LPCTSTR)lpMsgBuf);
+	// Free the buffer.
+	LocalFree( lpMsgBuf );
+
 }
 
 /******************************************************************************
@@ -1542,17 +1575,18 @@ int processData(TiXmlDocument *pDoc)
 *******************************************************************************/
 DWORD FusionSampleLoadAPILibrary()
 {
-	if(g_hInstFusionDLL==0)
-	{
+	if(g_hInstFusionDLL==0) {
 	
-		HINSTANCE hInst = LoadLibrary(L"FusionPublicAPI.DLL");
-		g_hInstFusionDLL = (DWORD)hInst;
-		if (!g_hInstFusionDLL)
-		{
+		g_hInst = LoadLibrary(L"FusionPublicAPI.DLL");
+		DumpLastError();
+		g_hInstFusionDLL = (DWORD)g_hInst;
+		
+		if (g_hInstFusionDLL==NULL) {
+			OutputDebugString(_T("Error loading fusion dll."));
 			return -1;
 		}
 
-		
+
 		lpfn_OpenFusionAPI		= (LPFN_OPEN_FUSION_API)	GetProcAddress((HMODULE)g_hInstFusionDLL, _T("OpenFusionAPI"));
 		lpfn_CloseFusionAPI		= (LPFN_CLOSE_FUSION_API)	GetProcAddress((HMODULE)g_hInstFusionDLL, _T("CloseFusionAPI"));
 		lpfn_CommandFusionAPI	= (LPFN_COMMAND_FUSION_API)	GetProcAddress((HMODULE)g_hInstFusionDLL, _T("CommandFusionAPI"));
@@ -1701,12 +1735,9 @@ DWORD EnemurateAndDeleteProfiles()
 *******************************************************************************/
 DWORD FusionSampleOpenAPILibrary()
 {
-	if( lpfn_OpenFusionAPI(&g_hInstFusionDLL,COMMAND_MODE ,L"FusionXML") != FAPI_SUCCESS )	
-	{
+	if( lpfn_OpenFusionAPI(&g_hInstFusionDLL,COMMAND_MODE ,L"_FusionXML_") != FAPI_SUCCESS ){
 		return -1;
-	}
-	else
-	{
+	} else{
 		return 0;
 	}
 }
@@ -1868,14 +1899,14 @@ BOOL AddFusionProfile(PVOID pProfile)
 
 	DWORD structSize = sizeof(FAPI_PROFILE_2);
 	FAPI_PROFILE_2 *p = (FAPI_PROFILE_2 *)pProfile;
-#ifdef _DEBUG
+//#ifdef _DEBUG
 	//for debugging purpose
 	FAPI_PROFILE_3 *p3 = (FAPI_PROFILE_3 *)pProfile;
 	FAPI_PROFILE_4 *p4 = (FAPI_PROFILE_4 *)pProfile; 
 	FAPI_PROFILE_6 *p6 = (FAPI_PROFILE_6 *)pProfile; 
 	FAPI_PROFILE_7 *p7 = (FAPI_PROFILE_7 *)pProfile; 
 	FAPI_PROFILE_8 *p8 = (FAPI_PROFILE_8 *)pProfile; 
-#endif
+//#endif
 	
 	switch(p->dwVersion)
 	{
@@ -1917,21 +1948,24 @@ BOOL AddFusionProfile(PVOID pProfile)
 }
 
 
- void InitializeFusion()
+ int InitializeFusion()
 {
-	int nResult;
+	int nResult = -1;
 	
 	AddLog(0,_T("Trying to load Fusion API"));
 	nResult =  FusionSampleLoadAPILibrary();
 	if( nResult == 0 ) {
 		AddLog(0,_T("Trying to open Fusion API"));
 		nResult =  FusionSampleOpenAPILibrary();
+		if(nResult!=0)
+			AddLog(0,_T("Error at open Fusion API"));
 	}else {
 		AddLog(1,_T("Error loading Fusion API!"));
 	}
-
-	AddLog(0,_T("Initialize of Fusion API DONE!"));
-
+	if(nResult==0)
+		AddLog(0,_T("Initialize of Fusion API DONE!"));
+	
+	return nResult;
 }
 
  void DeinitializeFusion()

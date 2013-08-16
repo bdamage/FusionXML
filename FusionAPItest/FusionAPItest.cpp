@@ -149,8 +149,8 @@ void AddNewProfile()
 
 void AddNewLEAPProfile()
 {
-	FAPI_PROFILE_4  fapiProfile = {0}; 
-	fapiProfile.dwVersion = FAPI_PROFILE_4_VERSION;
+	FAPI_PROFILE_7  fapiProfile = {0}; 
+	fapiProfile.dwVersion = FAPI_PROFILE_7_VERSION;
 
 	AddLog(3,_T("Detected Fusion Structure Ver = %d"),fapiProfile.dwVersion);
 
@@ -179,6 +179,9 @@ void AddNewLEAPProfile()
 	fapiProfile.dwEncryption = FAPI_ENCRYPTION_104BIT_PASSPH;
 	fapiProfile.NetworkType.Infrastructure.dwAuthentication = FAPI_LEAP; 
 
+	if((fapiProfile.NetworkType.Infrastructure.dwAuthentication != FAPI_AUTH_NONE) && (fapiProfile.NetworkType.Infrastructure.dwAuthentication != FAPI_LEAP))
+		fapiProfile.NetworkType.Infrastructure.dwSecurityMode = FAPI_SECURITY_WPA2_ENTERPRISE;
+
 
 	_tcscpy(fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCredSettings.pszDomain,_T("[Domain]"));
 	_tcscpy(fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCredSettings.pszIdentity,_T("[Username]"));
@@ -195,8 +198,8 @@ void AddNewLEAPProfile()
 
 void AddNewPEAPProfile()
 {
-	FAPI_PROFILE_4  fapiProfile = {0}; 
-	fapiProfile.dwVersion = FAPI_PROFILE_4_VERSION;
+	FAPI_PROFILE_7  fapiProfile = {0}; 
+	fapiProfile.dwVersion = FAPI_PROFILE_7_VERSION;
 
 	AddLog(3,_T("Detected Fusion Structure Ver = %d"),fapiProfile.dwVersion);
 
@@ -223,8 +226,12 @@ void AddNewPEAPProfile()
 	_tcscpy(fapiProfile.pszSSID,_T("[My ESSID 01234567890123456789]"));
 	_tcscpy(fapiProfile.pszCountryCode,_T("SE"));
 	fapiProfile.dwEncryption = FAPI_ENCRYPTION_AES;
-//	fapiProfile.NetworkType.Infrastructure.dwAuthentication = FAPI_PEAP_MSCHAPV2; 
-	fapiProfile.NetworkType.Infrastructure.dwAuthentication = FAPI_EAP_TLS; 
+	fapiProfile.NetworkType.Infrastructure.dwAuthentication = FAPI_PEAP_MSCHAPV2; 
+//	fapiProfile.NetworkType.Infrastructure.dwAuthentication = FAPI_EAP_TLS; 
+
+	
+	if((fapiProfile.NetworkType.Infrastructure.dwAuthentication != FAPI_AUTH_NONE) && (fapiProfile.NetworkType.Infrastructure.dwAuthentication != FAPI_LEAP))
+		fapiProfile.NetworkType.Infrastructure.dwSecurityMode = FAPI_SECURITY_WPA2_ENTERPRISE;
 
 
 	_tcscpy(fapiProfile.NetworkType.Infrastructure.CredentialSettings.UserCredSettings.pszDomain,_T("[Domain]"));

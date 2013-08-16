@@ -24,8 +24,7 @@ public:
 	int SetProfileName(TCHAR *pProfileNameStr, size_t maxLength)
 	{
 
-		if(pElmProf==NULL)
-		{
+		if(pElmProf==NULL) {
 			AddLog(1,_T("Couldn't find Profile tag!"));
 			return ERR_TAG_PROFILE;
 		}
@@ -122,6 +121,8 @@ public:
 		TiXmlElement *pElmIPv4 = GetElementSafe(pElmProf,"IPv4");
 		if(pElmIPv4)
 			GetText(pElmIPv4,szOut,"IPAddress",FAPI_MAX_IP_ADDRESS_LENGTH);
+		else
+			ZeroMemory(szOut,FAPI_MAX_IP_ADDRESS_LENGTH);
 	}
 
 	void GetSubnet(TCHAR *szOut)
@@ -129,6 +130,9 @@ public:
 		TiXmlElement *pElmIPv4 = GetElementSafe(pElmProf,"IPv4");
 		if(pElmIPv4)
 			GetText(pElmIPv4,szOut,"Subnet",FAPI_MAX_IP_ADDRESS_LENGTH);
+		else
+				ZeroMemory(szOut,FAPI_MAX_IP_ADDRESS_LENGTH);
+
 	}
 
 	void GetDNS1(TCHAR *szOut)
@@ -136,6 +140,9 @@ public:
 		TiXmlElement *pElmIPv4 = GetElementSafe(pElmProf,"IPv4");
 		if(pElmIPv4)
 			GetText(pElmIPv4,szOut,"DNS1",FAPI_MAX_IP_ADDRESS_LENGTH);
+		else
+			ZeroMemory(szOut,FAPI_MAX_IP_ADDRESS_LENGTH);
+
 	}
 
 	void GetDNS2(TCHAR *szOut)
@@ -143,6 +150,9 @@ public:
 		TiXmlElement *pElmIPv4 = GetElementSafe(pElmProf,"IPv4");
 		if(pElmIPv4)
 			GetText(pElmIPv4,szOut,"DNS2",FAPI_MAX_IP_ADDRESS_LENGTH);
+		else
+			ZeroMemory(szOut,FAPI_MAX_IP_ADDRESS_LENGTH);
+
 	}
 
 	void GetGateway(TCHAR *szOut)
@@ -150,6 +160,9 @@ public:
 		TiXmlElement *pElmIPv4 = GetElementSafe(pElmProf,"IPv4");
 		if(pElmIPv4)
 			GetText(pElmIPv4,szOut,"Gateway",FAPI_MAX_IP_ADDRESS_LENGTH);
+		else
+			ZeroMemory(szOut,FAPI_MAX_IP_ADDRESS_LENGTH);
+
 	}
 
 	void GetWINS1(TCHAR *szOut)
@@ -164,6 +177,9 @@ public:
 		TiXmlElement *pElmIPv4 = GetElementSafe(pElmProf,"IPv4");
 		if(pElmIPv4)
 			GetText(pElmIPv4,szOut,"WINS2",FAPI_MAX_IP_ADDRESS_LENGTH);
+		else
+			ZeroMemory(szOut,FAPI_MAX_IP_ADDRESS_LENGTH);
+
 	}
 
 
@@ -197,7 +213,7 @@ public:
 		pEncMode = GetElementSafe(pElmProf,"EncryptionMethod");
 		if(pEncMode==NULL)
 			pEncMode = GetElementSafe(pElmProf,"EncryptMethod");
-		
+
 		DWORD dwEncrypt = FAPI_ENCRYPTION_NONE;	
 		if(pEncMode) {
 			const char *szEncMode = pEncMode->GetText();
@@ -210,7 +226,9 @@ public:
 			else if(_stricmp("WEP40",szEncMode)==0)
 				dwEncrypt = FAPI_ENCRYPTION_40BIT_HEX ;
 			else if(_stricmp("WEP128",szEncMode)==0)
-				dwEncrypt = FAPI_ENCRYPTION_128BIT_HEX ;
+				dwEncrypt = FAPI_ENCRYPTION_104BIT_HEX ;
+			else if(_stricmp("WEP104",szEncMode)==0)
+				dwEncrypt = FAPI_ENCRYPTION_104BIT_HEX ;
 		}
 		return dwEncrypt;
 	}
@@ -436,9 +454,10 @@ public:
 					mbstowcs(pszOut, szTxt,dwBufferLen);	
 				}
 				return 0;
-			}
-		}
+			} //end element								
+		} //end node
 	//	AddLog(2,_T("Could not find tag %S"),szElementName);
+		ZeroMemory(pszOut,dwBufferLen); //default fill zero
 		return -1;
 	}
 

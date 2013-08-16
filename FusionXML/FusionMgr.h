@@ -71,8 +71,7 @@ public:
 		FAPI_AdapterInfo fapiAdapterInf;
 
 
-		if(hAdapter==0)
-		{
+		if(hAdapter==0) {
 			AddLog(1,_T("Couldn't retrieve Adapter handle!"));
 			return -1;
 		}
@@ -84,14 +83,11 @@ public:
 											  &fapiAdapterInf, sizeof(FAPI_AdapterInfo), 
 											  NULL);
 
-		if(dwResult != FAPI_SUCCESS)
-		{
+		if(dwResult != FAPI_SUCCESS) {
 			FusionDisplayLastError();
 			AddLog(1,_T("\nError reading MAC address - Check that ActiveSync is turned off or WLAN adapter is powered on!\n"));
 			return -2;
-		}
-		else
-		{
+		} else {
 			AddLog(0,_T("Got MAC successfully!\n"));		
 		}
 		TCHAR szBuffer[50];

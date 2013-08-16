@@ -33,7 +33,7 @@ FUSIONXML_API int loadXMLFile(char *szFilename);
 FUSIONXML_API int loadXMLString(char *szXMLString);
 
 FUSIONXML_API void DeinitializeFusion();
-FUSIONXML_API void InitializeFusion();
+FUSIONXML_API int InitializeFusion();
 FUSIONXML_API int GetMAC( SENDDEBUGMESSAGE *pfnDebug, DWORD dwDebugMask, const TCHAR *CmdLine, TCHAR *szBuf, int BufSize );
 FUSIONXML_API DWORD EnemurateAndDeleteProfiles();
 FUSIONXML_API DWORD DeleteFusionProfile(TCHAR *pszGUID);
