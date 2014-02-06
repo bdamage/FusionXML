@@ -63,7 +63,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\LEAP_profile.xml\""));
 
-			lpfnFXML_AddProfile(NULL,0,_T("\"\\eap_fast_profile.xml\""));
+			lpfnFXML_AddProfile(NULL,0,_T("\"\\WiFiConf.xml\""));
 		//	lpfnFXML_AddProfile(NULL,0,_T("\"\\example_eap_fast_profile.xml\""));
 		
 
